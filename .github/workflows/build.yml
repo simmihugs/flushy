@@ -1,0 +1,43 @@
+name: Build Windows EXE
+on:
+  push:
+    tags:
+      - 'v*' # Triggert, wenn du einen Tag wie v1.0.0 pushst
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          target: x86_64-pc-windows-msvc
+
+      # Bei Tauri v2 optimiert das Caching den Build extrem
+      - name: Cargo cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: install frontend dependencies
+        run: npm ci # Sauberer als 'npm install' im CI-Umfeld
+
+      - name: Build Tauri App
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Flushy Release ${{ github.ref_name }}'
+          releaseDraft: true
+          prerelease: false
