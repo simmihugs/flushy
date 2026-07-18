@@ -167,3 +167,33 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_and_analyze_logic() -> std::io::Result<()> {
+        let mut file = File::open("../../../Downloads/hdplus_20260702_51927.pts")?;
+        let mut xml_input = String::new();
+        file.read_to_string(&mut xml_input)?;
+
+        let doc = roxmltree::Document::parse(&xml_input).unwrap();
+        let si_events: Vec<roxmltree::Node<'_, '_>> = doc
+            .descendants()
+            .filter(|n| n.has_tag_name("siEvent"))
+            .collect();
+
+        let mut parsed = parse_si_events(&xml_input.to_string(), si_events);
+
+        parsed = analyze_si_events(parsed);
+
+        // assert_eq!(parsed.len(), 2);
+        // assert_eq!(parsed[0].error_back, Some(TimeErrorType::Gap));
+        // assert!(parsed[0].has_error);
+
+        println!("{:#?}", parsed);
+
+        Ok(())
+    }
+}
