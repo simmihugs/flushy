@@ -1,7 +1,161 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+use chrono::{DateTime, Duration, LocalResult, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use roxmltree;
+use serde::Serialize;
+use std::{fs::File, io::Read};
+
 #[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+fn greet(path: String) -> Result<Vec<SiEventParsed>, String> {
+    let mut file = File::open(&path).map_err(|e| format!("Fehler beim Öffnen der Datei: {}", e))?;
+
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)
+        .map_err(|e| format!("Fehler beim Lesen der Datei: {}", e))?;
+
+    let doc = roxmltree::Document::parse(&contents)
+        .map_err(|e| format!("Ungültiges XML-Format: {}", e))?;
+
+    let si_events: Vec<roxmltree::Node<'_, '_>> = doc
+        .descendants()
+        .filter(|n| n.has_tag_name("siEvent"))
+        .collect();
+
+    let mut parsed = parse_si_events(&contents, si_events);
+    parsed = analyze_si_events(parsed);
+
+    Ok(parsed)
+}
+
+pub fn analyze_si_events(mut events: Vec<SiEventParsed>) -> Vec<SiEventParsed> {
+    for i in 0..events.len() - 1 {
+        let end_current = events[i].end_time;
+        let start_next = events[i + 1].start_time;
+
+        let diff = (start_next - end_current).num_milliseconds();
+
+        if diff > 0 {
+            events[i].error_back = Some(TimeErrorType::Gap);
+            events[i + 1].error_front = Some(TimeErrorType::Gap);
+        } else if diff < 0 {
+            events[i].error_back = Some(TimeErrorType::Overlap);
+            events[i + 1].error_front = Some(TimeErrorType::Overlap);
+        }
+    }
+
+    for event in &mut events {
+        event.has_error = event.error_front.is_some() || event.error_back.is_some();
+    }
+
+    events
+}
+
+pub fn parse_si_events(
+    contents: &String,
+    si_events: Vec<roxmltree::Node<'_, '_>>,
+) -> Vec<SiEventParsed> {
+    si_events
+        .iter()
+        .map(|node| {
+            let xml_string = String::from(&contents[node.range()]);
+            let event_id = node.attribute("eventId").unwrap().to_string();
+            let title = node.attribute("title").unwrap().to_string();
+
+            let duration: i64 =
+                a_duration_from_string(node.attribute("duration").unwrap().to_string());
+            let start_time = a_starttime_from_str(node.attribute("startTime").unwrap().to_string());
+            let end_time = calculate_endtime(duration, start_time);
+            let mut displayed_start: Option<DateTime<chrono::Utc>> = None;
+            let mut displayed_end: Option<DateTime<chrono::Utc>> = None;
+
+            for child in node.descendants().filter(|c| c.has_tag_name("siStandard")) {
+                let d = a_duration_from_string(
+                    child.attribute("displayedDuration").unwrap().to_string(),
+                );
+                let s =
+                    a_starttime_from_str(child.attribute("displayedStart").unwrap().to_string());
+                let e = calculate_endtime(d, s);
+                displayed_end = Some(e);
+                displayed_start = Some(s);
+            }
+
+            let error_front = None;
+            let error_back = None;
+            let has_error = false;
+
+            SiEventParsed {
+                event_id,
+                title,
+
+                start_time,
+                end_time,
+                displayed_start,
+                displayed_end,
+
+                error_front,
+                error_back,
+                has_error,
+
+                xml_string,
+            }
+        })
+        .collect()
+}
+
+#[derive(Serialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum TimeErrorType {
+    Gap,
+    Overlap,
+}
+
+#[derive(Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SiEventParsed {
+    pub event_id: String,
+    pub title: String,
+
+    pub start_time: DateTime<Utc>,
+    pub end_time: DateTime<Utc>,
+    pub displayed_start: Option<DateTime<Utc>>,
+    pub displayed_end: Option<DateTime<Utc>>,
+
+    pub error_front: Option<TimeErrorType>,
+    pub error_back: Option<TimeErrorType>,
+    pub has_error: bool,
+
+    pub xml_string: String,
+}
+
+pub fn a_duration_from_string(string: String) -> i64 {
+    let fmt = "00 %H:%M:%S%.3f";
+    let step = NaiveTime::parse_from_str("00 00:00:00.000", "00 %H:%M:%S%.3f").unwrap();
+    let naivetime = NaiveTime::parse_from_str(&string, fmt);
+    match naivetime {
+        Ok(time) => {
+            let dur: Duration = time - step;
+            dur.num_milliseconds()
+        }
+        Err(..) => 0,
+    }
+}
+
+pub fn calculate_endtime(duration: i64, start_time: DateTime<Utc>) -> DateTime<Utc> {
+    let duration: Duration = match chrono::TimeDelta::try_milliseconds(duration) {
+        Some(duration) => duration,
+        None => Duration::new(0, 0).unwrap(),
+    };
+
+    start_time + duration
+}
+
+pub fn a_starttime_from_str(string: String) -> DateTime<Utc> {
+    let dt = NaiveDateTime::parse_from_str(&string, "%Y-%m-%dT%H:%M:%S%.3fZ");
+    match dt {
+        Ok(dtt) => {
+            let dt2: LocalResult<DateTime<Utc>> = Utc.from_local_datetime(&dtt);
+            dt2.unwrap()
+        }
+        Err(..) => Utc::now(),
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
