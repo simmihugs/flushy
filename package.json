@@ -1,16 +1,5 @@
 {
-<<<<<<< HEAD
   "name": "flushy",
-  "private": true,
-  "version": "0.1.0",
-  "type": "module",
-  "scripts": {
-    "tauri": "tauri"
-  },
-  "devDependencies": {
-    "@tauri-apps/cli": "^2"
-=======
-  "name": "jojo",
   "version": "0.1.0",
   "description": "",
   "type": "module",
@@ -40,6 +29,5 @@
     "svelte-check": "^4.0.0",
     "typescript": "~5.6.2",
     "vite": "^6.0.3"
->>>>>>> 4e28009 (updated to svelte typescript)
   }
 }

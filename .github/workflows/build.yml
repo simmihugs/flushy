@@ -1,8 +1,8 @@
-name: Build Windows EXE
+ame: Build Windows EXE
 on:
   push:
     tags:
-      - 'v*' # Triggert, wenn du einen Tag wie v1.0.0 pushst
+      - 'v*'
 
 jobs:
   release:
@@ -23,14 +23,13 @@ jobs:
         with:
           target: x86_64-pc-windows-msvc
 
-      # Bei Tauri v2 optimiert das Caching den Build extrem
       - name: Cargo cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
 
       - name: install frontend dependencies
-        run: npm ci # Sauberer als 'npm install' im CI-Umfeld
+        run: npm ci
 
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
