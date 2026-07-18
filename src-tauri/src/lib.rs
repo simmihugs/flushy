@@ -4,7 +4,7 @@ use serde::Serialize;
 use std::{fs::File, io::Read};
 
 #[tauri::command]
-fn greet(path: String) -> Result<Vec<SiEventParsed>, String> {
+fn parse_file(path: String) -> Result<Vec<SiEventParsed>, String> {
     let mut file = File::open(&path).map_err(|e| format!("Fehler beim Öffnen der Datei: {}", e))?;
 
     let mut contents = String::new();
@@ -163,7 +163,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![parse_file])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -1,86 +1,144 @@
-<script lang="ts">
+<script>
+	import Event from './Event.svelte';
 	import { invoke } from '@tauri-apps/api/core';
+	import { onMount } from 'svelte';
 	import { getCurrentWebview } from '@tauri-apps/api/webview';
 	import { open } from '@tauri-apps/plugin-dialog';
-	import { onMount } from 'svelte';
-	import { fade } from 'svelte/transition';
 
-	let files = [];
-	let activeFile = null;
-	let isSidebarCollapsed = false;
-	let events = [];
-	let errorMessage = '';
-	let selectedEvent = null;
+	let showCollapsed = $state(true);
+	let events = $state([]);
+	let selectedEvent = $state(null);
+	let files = $state([]);
+	let activeFile = $state(null);
 
-	const ALLOWED = ['xml', 'pts'];
+	let name = $state('');
+	let parseFileMsg = $state('');
 
-	// Nimmt Objekte der Form { name, path } entgegen
-	function handleFiles(newFiles) {
+	function formatTime(timeVal) {
+		if (!timeVal) return '';
+		if (typeof timeVal === 'string' && timeVal.includes(':')) {
+			return timeVal.split(' ')[0];
+		}
+		try {
+			const date = new Date(timeVal);
+			if (!isNaN(date.getTime())) {
+				return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+			}
+		} catch (e) {}
+		return String(timeVal);
+	}
+
+	async function handleFiles(newFiles) {
 		let validAdded = false;
 		for (let file of newFiles) {
 			const ext = file.name.split('.').pop().toLowerCase();
-			if (ALLOWED.includes(ext)) {
-				files = [...files, file];
-				validAdded = true;
-			} else {
-				alert(`Fehler: .${ext.toUpperCase()} ist nicht erlaubt!`);
-			}
+			files = [...files, file];
+			validAdded = true;
 		}
 		if (validAdded && !activeFile) {
-			selectFile(files[files.length - 1]);
+			activeFile = files[0];
+			// console.log(files);
+			// console.log(files[0].path);
+			await runAutomaticParsing(activeFile);
 		}
 	}
 
-	async function selectFile(file) {
-		activeFile = file;
-		errorMessage = '';
-		events = [];
-		console.log(file);
-
-		if (!file.path) {
-			errorMessage = 'Kritischer Fehler: Kein Pfad vorhanden!';
-			return;
-		}
-
+	async function runAutomaticParsing(file) {
 		try {
-			const response = await invoke('process_file_to_json', {
-				path: file.path
-			});
-			events = response;
+			const answer = await invoke('parse_file', { path: file.path });
+			events = answer;
 		} catch (err) {
-			errorMessage = `Rust-Fehler: ${err}`;
+			console.error('Fehler beim automatischen Parsen:', err);
 		}
 	}
 
 	async function chooseFile() {
-		try {
-			const selected = await open({
-				multiple: true,
-				filters: [{ name: 'Daten', extensions: ALLOWED }]
-			});
+		const selected = await open({
+			multiple: false,
+			filters: [{ name: 'Daten', extensions: ['xml', 'pts'] }]
+		});
 
-			if (selected) {
-				// Falls mehrere Dateien ausgewählt wurden (selected ist dann ein Array von Pfaden)
-				const paths = Array.isArray(selected) ? selected : [selected];
-				const mapped = paths.map((filePath) => ({
-					name: filePath.split(/[/\\]/).pop(),
-					path: filePath
-				}));
-				handleFiles(mapped);
-			}
-		} catch (err) {
-			errorMessage = `Fehler beim Öffnen des Dialogs: ${err}`;
+		if (selected) {
+			const file = {
+				name: selected.split(/[/\\]/).pop(),
+				path: selected
+			};
+			handleFiles([file]);
 		}
 	}
+
+	async function parseFile(event) {
+		if (event) event.preventDefault();
+		if (files.length === 0) {
+			alert('Bitte wähle zuerst eine Datei aus!');
+			return;
+		}
+
+		try {
+			const answer = await invoke('parse_file', { path: files[0].path });
+
+			answer.forEach((element) => {
+				console.log(element);
+			});
+
+			parseFileMsg = typeof answer[0] === 'object' ? answer[0].title : answer[0];
+			events = answer;
+		} catch (err) {
+			console.error('Fehler beim Laden durch Rust:', err);
+		}
+	}
+
+	let groupedEvents = $derived.by(() => {
+		if (!showCollapsed) {
+			return events.map((event) => ({
+				type: event.hasError ? 'error' : 'ok-flat',
+				data: event
+			}));
+		}
+
+		const result = [];
+		let currentOkGroup = null;
+
+		for (const event of events) {
+			if (event.hasError) {
+				if (currentOkGroup) {
+					result.push(currentOkGroup);
+					currentOkGroup = null;
+				}
+				result.push({ type: 'error', data: event });
+			} else {
+				if (!currentOkGroup) {
+					currentOkGroup = {
+						type: 'collapsed-ok',
+						count: 1,
+						startTime: event.startTime,
+						endTime: event.endTime,
+						events: [event]
+					};
+				} else {
+					currentOkGroup.count++;
+					currentOkGroup.endTime = event.endTime;
+					currentOkGroup.events.push(event);
+				}
+			}
+		}
+
+		if (currentOkGroup) {
+			result.push(currentOkGroup);
+		}
+
+		return result;
+	});
 
 	onMount(() => {
 		const unlisten = getCurrentWebview().onDragDropEvent((event) => {
 			if (event.payload.type === 'drop') {
-				const mapped = event.payload.paths.map((filePath) => ({
+				const nativePaths = event.payload.paths;
+				const mappedFiles = nativePaths.map((filePath) => ({
 					name: filePath.split(/[/\\]/).pop(),
 					path: filePath
 				}));
-				handleFiles(mapped);
+				handleFiles(mappedFiles);
 			}
 		});
 
@@ -90,389 +148,334 @@
 	});
 </script>
 
-<div class="dropzone">
-	{#if files.length === 0}
-		<div transition:fade>
-			<p>Dateien hierher in das Fenster ziehen oder</p>
-			<button class="btn" on:click={chooseFile}>Datei wählen</button>
-		</div>
-	{:else}
-		<div transition:fade style="width: 100%;">
-			<button class="btn-mini" on:click={chooseFile}>
-				{isSidebarCollapsed ? '＋' : '＋ Datei hinzufügen'}
-			</button>
+<main class="container">
+	<!-- {#if files.length > 0} -->
+	<!-- 	<div class="loaded-file-info"> -->
+	<!-- 		Selected: <strong>{files[0].name}</strong> -->
+	<!-- 	</div> -->
+	<!-- 	<button type="button" class="btn-process" onclick={(event) => parseFile(event)} -->
+	<!-- 		>Daten auswerten</button -->
+	<!-- 	> -->
+	<!-- {/if} -->
+
+	{#if groupedEvents.length > 0}
+		<div class="filter-area">
+			<label class="switch-container">
+				<input type="checkbox" bind:checked={showCollapsed} />
+				<span class="switch-slider"></span>
+				<span class="switch-label">Fehlerfreie Blöcke zusammenfassen</span>
+			</label>
 		</div>
 	{/if}
-</div>
 
-<svelte:window on:dragover|preventDefault on:drop|preventDefault />
-
-<div class="app-container" class:has-files={files.length > 0} class:collapsed={isSidebarCollapsed}>
-	<aside class="sidebar-area">
-		{#if files.length > 0}
-			<div class="sidebar-header" transition:fade>
-				<button on:click={() => (isSidebarCollapsed = !isSidebarCollapsed)}>
-					{isSidebarCollapsed ? '➔' : '←'}
-				</button>
-				{#if !isSidebarCollapsed}
-					<span class="active-title">Aktiv: {activeFile?.name}</span>
-				{/if}
-			</div>
-
-			<div class="file-list">
-				{#each files as file}
-					<button
-						class="file-item"
-						class:active={activeFile === file}
-						on:click={() => (activeFile = file)}
-					>
-						<span class="icon">📄</span>
-						{#if !isSidebarCollapsed}
-							<span class="text" transition:fade>{file.name}</span>
-						{/if}
-					</button>
-				{/each}
-			</div>
-		{/if}
-
-		<div
-			class="dropzone"
-			on:dragover|preventDefault
-			on:drop|preventDefault|stopPropagation={handleDrop}
-		>
-			{#if files.length === 0}
-				<div transition:fade>
-					<p>Dateien hierher ziehen oder</p>
-					<input
-						type="file"
-						id="file-input"
-						multiple
-						on:change={(e) => handleFiles(Array.from(e.target.files))}
-						hidden
-					/>
-					<label for="file-input" class="btn">Datei wählen</label>
-				</div>
+	<div class="event-list">
+		{#each groupedEvents as item}
+			{#if item.type === 'error'}
+				<Event
+					event={item.data}
+					active={selectedEvent?.eventId === item.data.eventId}
+					onSelect={() => (selectedEvent = item.data)}
+				/>
+			{:else if item.type === 'ok-flat'}
+				<Event
+					event={item.data}
+					active={selectedEvent?.eventId === item.data.eventId}
+					onSelect={() => (selectedEvent = item.data)}
+				/>
 			{:else}
-				<div transition:fade style="width: 100%;">
-					<input
-						type="file"
-						id="file-input-mini"
-						multiple
-						on:change={(e) => handleFiles(Array.from(e.target.files))}
-						hidden
-					/>
-					<label for="file-input-mini" class="btn-mini">
-						{isSidebarCollapsed ? '＋' : '＋ Datei hinzufügen'}
-					</label>
+				<div class="collapsed-card">
+					<span class="ok-badge">✓ OK</span>
+					<span class="collapsed-text">
+						{item.count} fehlerfreie Sendungen übersprungen
+					</span>
+					<span class="collapsed-time">
+						{formatTime(item.startTime)} - {formatTime(item.endTime)}
+					</span>
 				</div>
 			{/if}
-		</div>
-	</aside>
-
-	<main class="main-content">
-		{#if files.length === 0}
-			<div class="empty-state">Bitte lade eine Datei hoch, um zu beginnen.</div>
 		{:else}
-			<div class="viewer" transition:fade>
-				<div class="viewer-header">
-					<h2>Inhalt von: {activeFile?.name}</h2>
-					<p>Größe: {((activeFile?.size || 0) / 1024).toFixed(2)} KB</p>
-				</div>
-
-				{#if errorMessage}
-					<div class="error-banner">{errorMessage}</div>
-				{/if}
-
-				<div class="event-grid">
-					{#each events as event}
-						<button
-							class="event-card"
-							class:has-error={event.hasError}
-							class:active={selectedEvent?.eventId === event.eventId}
-							on:click={() => (selectedEvent = event)}
-						>
-							<div class="card-top">
-								<span class="event-id">{event.eventId}</span>
-								{#if event.hasError}
-									<span class="error-badge">
-										{event.errorFront || event.errorBack || '⚠️ Fehler'}
-									</span>
-								{/if}
-							</div>
-
-							<h3 class="event-title">{event.title}</h3>
-
-							<div class="card-bottom">
-								<span class="time">{formatTime(event.startTime)} - {formatTime(event.endTime)}</span
-								>
-							</div>
-						</button>
-					{/each}
-				</div>
-
-				{#if selectedEvent}
-					<div class="detail-panel" transition:fade>
-						<h3>Detail: {selectedEvent.title}</h3>
-						<p>
-							<strong>Start:</strong>
-							{new Date(selectedEvent.startTime).toLocaleString('de-DE')}
-						</p>
-						<p>
-							<strong>Ende:</strong>
-							{new Date(selectedEvent.endTime).toLocaleString('de-DE')}
-						</p>
-						{#if selectedEvent.displayedStart}
-							<p>
-								<strong>Anzeige Start:</strong>
-								{new Date(selectedEvent.displayedStart).toLocaleString('de-DE')}
-							</p>
-						{/if}
-
-						<h4>Zugehöriges XML-Snippet:</h4>
-						<pre class="xml-box"><code>{selectedEvent.xmlString}</code></pre>
-					</div>
-				{/if}
+			<div class="empty-state">
+				<p>Es wurden noch keine XML-Events geladen.</p>
 			</div>
-		{/if}
-	</main>
-</div>
+		{/each}
+	</div>
+
+	<div class="drop-container">
+		<div class="dropzone">
+			<p>Dateien (.xml, .pts) hierher ziehen</p>
+			<span class="or-separator">oder</span>
+			<button type="button" onclick={chooseFile}>Datei auswählen</button>
+		</div>
+	</div>
+</main>
 
 <style>
-	:global(html, body) {
+	.logo.vite:hover {
+		filter: drop-shadow(0 0 2em #747bff);
+	}
+
+	.logo.svelte-kit:hover {
+		filter: drop-shadow(0 0 2em #ff3e00);
+	}
+
+	:root {
+		font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+		font-size: 16px;
+		line-height: 24px;
+		font-weight: 400;
+
+		color: #0f0f0f;
+		background-color: #f6f6f6;
+
+		font-synthesis: none;
+		text-rendering: optimizeLegibility;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		-webkit-text-size-adjust: 100%;
+	}
+
+	.container {
 		margin: 0;
-		padding: 0;
-		height: 100vh;
-		overflow: hidden;
-		font-family: sans-serif;
-	}
-
-	.app-container {
-		display: grid;
-		grid-template-columns: 1fr;
-		height: 100vh;
-		transition: grid-template-columns 0.4s ease;
-	}
-
-	.app-container.has-files {
-		grid-template-columns: 260px 1fr;
-	}
-
-	.app-container.has-files.collapsed {
-		grid-template-columns: 80px 1fr;
-	}
-
-	.sidebar-area {
+		padding-top: 10vh;
 		display: flex;
 		flex-direction: column;
-		background: #f8f9fa;
-		border-right: 1px solid #ddd;
-		padding: 20px;
-		box-sizing: border-box;
 		justify-content: center;
-		align-items: center;
+		text-align: center;
 	}
 
-	.app-container.has-files .sidebar-area {
-		justify-content: flex-start;
-		align-items: stretch;
-		padding: 15px;
+	.logo {
+		height: 6em;
+		padding: 1.5em;
+		will-change: filter;
+		transition: 0.75s;
 	}
 
-	.sidebar-header {
+	.logo.tauri:hover {
+		filter: drop-shadow(0 0 2em #24c8db);
+	}
+
+	.row {
 		display: flex;
-		align-items: center;
-		gap: 10px;
-		margin-bottom: 20px;
+		justify-content: center;
 	}
 
-	.file-list {
-		flex-grow: 1;
-		overflow-y: auto;
-		margin-bottom: 15px;
+	a {
+		font-weight: 500;
+		color: #646cff;
+		text-decoration: inherit;
 	}
 
-	.file-item {
-		display: flex;
-		align-items: center;
-		width: 100%;
-		padding: 10px;
-		background: white;
-		border: 1px solid #eee;
-		border-radius: 6px;
-		margin-bottom: 8px;
+	a:hover {
+		color: #535bf2;
+	}
+
+	h1 {
+		text-align: center;
+	}
+
+	input,
+	button {
+		border-radius: 8px;
+		border: 1px solid transparent;
+		padding: 0.6em 1.2em;
+		font-size: 1em;
+		font-weight: 500;
+		font-family: inherit;
+		color: #0f0f0f;
+		background-color: #ffffff;
+		transition: border-color 0.25s;
+		box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+	}
+
+	button {
 		cursor: pointer;
-		text-align: left;
 	}
 
-	.file-item.active {
-		border-color: #2196f3;
-		background: #e8f4fd;
-		font-weight: bold;
+	button:hover {
+		border-color: #396cd8;
+	}
+	button:active {
+		border-color: #396cd8;
+		background-color: #e8e8e8;
+	}
+
+	.btn-process {
+		background-color: #396cd8;
+		color: white;
+		margin: 10px auto;
+		display: block;
+		max-width: 200px;
+	}
+
+	.loaded-file-info {
+		margin: 10px 0;
+		font-size: 0.95em;
+	}
+
+	input,
+	button {
+		outline: none;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		:root {
+			color: #f6f6f6;
+			background-color: #2f2f2f;
+		}
+
+		a:hover {
+			color: #24c8db;
+		}
+
+		input,
+		button {
+			color: #ffffff;
+			background-color: #0f0f0f98;
+		}
+		button:active {
+			background-color: #0f0f0f69;
+		}
+	}
+
+	.drop-container {
+		display: flex;
+		justify-content: center;
+		margin: 20px 0;
 	}
 
 	.dropzone {
-		border: 2px dashed #bbb;
-		border-radius: 8px;
-		background: white;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		text-align: center;
-		transition: all 0.3s ease;
-	}
-
-	.app-container:not(.has-files) .dropzone {
-		width: 400px;
-		height: 250px;
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
-	}
-
-	.app-container.has-files .dropzone {
-		width: 100%;
-		height: auto;
-		padding: 15px;
-		margin-top: auto;
-	}
-
-	.app-container.has-files.collapsed .dropzone {
-		border: none;
-		background: transparent;
-		padding: 0;
-	}
-
-	.btn {
-		display: inline-block;
-		background: #2196f3;
-		color: white;
-		padding: 8px 16px;
-		border-radius: 4px;
-		margin-top: 10px;
-		cursor: pointer;
-	}
-
-	.btn-mini {
-		background: #e2e8f0;
-		padding: 8px;
-		border-radius: 4px;
-		display: block;
-		text-align: center;
-		font-size: 12px;
-		cursor: pointer;
-	}
-
-	.main-content {
-		background: #f1f3f5;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.viewer {
-		background: white;
-		padding: 40px;
-		border-radius: 8px;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-	}
-
-	.viewer {
-		width: 100%;
-		max-width: 1200px;
-		height: 90vh;
-		overflow-y: auto;
-		padding: 20px;
-		background: white;
-		border-radius: 8px;
-	}
-
-	.event-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-		gap: 15px;
-		margin-top: 20px;
-		margin-bottom: 30px;
-	}
-
-	.event-card {
-		background: #f8fafc;
-		border: 1px solid #e2e8f0;
-		border-radius: 8px;
-		padding: 12px;
-		text-align: left;
-		cursor: pointer;
-		transition: all 0.2s ease;
+		width: 80%;
+		max-width: 500px;
+		padding: 30px;
+		border: 2px dashed #396cd8;
+		border-radius: 12px;
+		background-color: #ffffff;
 		display: flex;
 		flex-direction: column;
-		justify-content: space-between;
-		min-height: 110px;
+		align-items: center;
+		gap: 10px;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+		transition:
+			background-color 0.2s,
+			border-color 0.2s;
 	}
 
-	.event-card:hover {
-		border-color: #cbd5e1;
-		background: #f1f5f9;
+	.or-separator {
+		font-size: 0.9em;
+		color: #666;
+		font-style: italic;
 	}
 
-	.event-card.active {
-		border-color: #3b82f6;
-		background: #eff6ff;
-	}
-
-	.event-card.has-error {
-		border-color: #f87171;
-		background: #fef2f2;
-	}
-
-	.card-top {
+	.filter-area {
 		display: flex;
-		justify-content: space-between;
-		font-size: 10px;
-		color: #64748b;
+		justify-content: center;
+		padding: 10px 0;
+		margin-bottom: 15px;
 	}
 
-	.error-badge {
-		background: #fee2e2;
-		color: #dc2626;
-		padding: 1px 5px;
-		border-radius: 4px;
-		font-weight: bold;
-		text-transform: uppercase;
-	}
-
-	.event-title {
-		font-size: 15px;
-		margin: 8px 0;
-		color: #1e293b;
-		font-weight: 600;
-	}
-
-	.card-bottom {
-		font-size: 12px;
+	.switch-container {
+		display: inline-flex;
+		align-items: center;
+		cursor: pointer;
+		gap: 10px;
+		user-select: none;
+		font-size: 14px;
 		color: #475569;
 	}
 
-	.detail-panel {
-		border-top: 2px solid #3b82f6;
-		background: #f8fafc;
-		padding: 20px;
+	.switch-container input {
+		display: none;
+	}
+
+	.switch-slider {
+		position: relative;
+		width: 40px;
+		height: 20px;
+		background-color: #cbd5e1;
+		border-radius: 20px;
+		transition: background-color 0.2s;
+	}
+
+	.switch-slider::before {
+		content: '';
+		position: absolute;
+		width: 16px;
+		height: 16px;
+		left: 2px;
+		bottom: 2px;
+		background-color: white;
+		border-radius: 50%;
+		transition: transform 0.2s;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+	}
+
+	.switch-container input:checked + .switch-slider {
+		background-color: #3b82f6;
+	}
+
+	.switch-container input:checked + .switch-slider::before {
+		transform: translateX(20px);
+	}
+
+	.collapsed-card {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		background: #ffffff;
+		border: 1px solid #e2e8f0;
 		border-radius: 8px;
+		padding: 10px 20px;
+		margin: 8px auto;
+		width: 80%;
+		max-width: 600px;
+		font-size: 13px;
+		color: #475569;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 	}
 
-	.xml-box {
-		background: #1e293b;
-		color: #38bdf8;
-		padding: 15px;
-		border-radius: 6px;
-		overflow-x: auto;
-		font-family: monospace;
+	.ok-badge {
+		background: #dcfce7;
+		color: #15803d;
+		padding: 2px 6px;
+		border-radius: 4px;
+		font-weight: bold;
 		font-size: 11px;
-		max-height: 250px;
 	}
 
-	.error-banner {
-		background: #fee2e2;
-		border: 1px solid #f87171;
-		color: #b91c1c;
-		padding: 10px;
-		border-radius: 6px;
-		margin-bottom: 15px;
+	.collapsed-text {
+		font-weight: 500;
+	}
+
+	.collapsed-time {
+		font-family: monospace;
+		color: #64748b;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.dropzone {
+			background-color: #1e1e1e;
+			border-color: #24c8db;
+		}
+		.or-separator {
+			color: #aaa;
+		}
+		.switch-container {
+			color: #94a3b8;
+		}
+		.switch-slider {
+			background-color: #475569;
+		}
+		.switch-container input:checked + .switch-slider {
+			background-color: #24c8db;
+		}
+		.collapsed-card {
+			background: #1e1e1e;
+			border-color: #334155;
+			color: #94a3b8;
+		}
+		.ok-badge {
+			background: #064e3b;
+			color: #34d399;
+		}
 	}
 </style>
