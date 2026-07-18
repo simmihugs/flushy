@@ -1,519 +1,3 @@
-<!-- <script lang="ts"> -->
-<!-- 	import { invoke } from '@tauri-apps/api/core'; -->
-<!-- 	import { getCurrentWebview } from '@tauri-apps/api/webview'; -->
-<!-- 	import { open } from '@tauri-apps/plugin-dialog'; -->
-<!-- 	import { onMount } from 'svelte'; -->
-<!-- 	import { fade } from 'svelte/transition'; -->
-
-<!-- 	let isSidebarCollapsed = false; -->
-<!-- 	let showCollapsed = $state(true); -->
-<!-- 	let events = $state([]); -->
-<!-- 	let selectedEvent = $state(null); -->
-<!-- 	let files = $state([]); -->
-<!-- 	let activeFile = $state(null); -->
-
-<!-- 	const ALLOWED = ['xml', 'pts']; -->
-
-<!-- 	function formatTime(timeVal) { -->
-<!-- 		if (!timeVal) return ''; -->
-
-<!-- 		if (typeof timeVal === 'string' && timeVal.includes(':')) { -->
-<!-- 			return timeVal.split(' ')[0]; -->
-<!-- 		} -->
-<!-- 		try { -->
-<!-- 			const date = new Date(timeVal); -->
-<!-- 			if (!isNaN(date.getTime())) { -->
-<!-- 				return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); -->
-<!-- 			} -->
-<!-- 		} catch (e) {} -->
-<!-- 		return String(timeVal); -->
-<!-- 	} -->
-
-<!-- 	function handleFiles(newFiles) { -->
-<!-- 		let validAdded = false; -->
-<!-- 		for (let file of newFiles) { -->
-<!-- 			const ext = file.name.split('.').pop().toLowerCase(); -->
-<!-- 			files = [...files, file]; -->
-<!-- 			validAdded = true; -->
-<!-- 		} -->
-<!-- 		if (validAdded && !activeFile) { -->
-<!-- 			activeFile = files[0]; -->
-<!-- 			console.log(files); -->
-<!-- 			console.log(files[0].path); -->
-<!-- 		} -->
-<!-- 	} -->
-
-<!-- 	async function chooseFile() { -->
-<!-- 		const selected = await open({ -->
-<!-- 			multiple: false, -->
-<!-- 			filters: [{ name: 'Daten', extensions: ['xml', 'pts'] }] -->
-<!-- 		}); -->
-
-<!-- 		if (selected) { -->
-<!-- 			const file = { -->
-<!-- 				name: selected.split(/[/\\]/).pop(), -->
-<!-- 				path: selected -->
-<!-- 			}; -->
-<!-- 			handleFiles([file]); -->
-<!-- 		} -->
-<!-- 	} -->
-
-<!-- 	async function parseFile(event) { -->
-<!-- 		if (event) event.preventDefault(); -->
-<!-- 		if (files.length === 0) { -->
-<!-- 			alert('Bitte wähle zuerst eine Datei aus!'); -->
-<!-- 			return; -->
-<!-- 		} -->
-
-<!-- 		try { -->
-<!-- 			const answer = await invoke('parse_file', { path: files[0].path }); -->
-
-<!-- 			answer.forEach((element) => { -->
-<!-- 				console.log(element); -->
-<!-- 			}); -->
-
-<!-- 			parseResult = typeof answer[0] === 'object' ? answer[0].title : answer[0]; -->
-<!-- 			events = answer; -->
-<!-- 		} catch (err) { -->
-<!-- 			console.error('Fehler beim Laden durch Rust:', err); -->
-<!-- 		} -->
-<!-- 	} -->
-
-<!-- 	let groupedEvents = $derived.by(() => { -->
-<!-- 		if (!showCollapsed) { -->
-<!-- 			return events.map((event) => ({ -->
-<!-- 				type: event.hasError ? 'error' : 'ok-flat', -->
-<!-- 				data: event -->
-<!-- 			})); -->
-<!-- 		} -->
-
-<!-- 		const result = []; -->
-<!-- 		let currentOkGroup = null; -->
-
-<!-- 		for (const event of events) { -->
-<!-- 			if (event.hasError) { -->
-<!-- 				if (currentOkGroup) { -->
-<!-- 					result.push(currentOkGroup); -->
-<!-- 					currentOkGroup = null; -->
-<!-- 				} -->
-<!-- 				result.push({ type: 'error', data: event }); -->
-<!-- 			} else { -->
-<!-- 				if (!currentOkGroup) { -->
-<!-- 					currentOkGroup = { -->
-<!-- 						type: 'collapsed-ok', -->
-<!-- 						count: 1, -->
-<!-- 						startTime: event.startTime, -->
-<!-- 						endTime: event.endTime, -->
-<!-- 						events: [event] -->
-<!-- 					}; -->
-<!-- 				} else { -->
-<!-- 					currentOkGroup.count++; -->
-<!-- 					currentOkGroup.endTime = event.endTime; -->
-<!-- 					currentOkGroup.events.push(event); -->
-<!-- 				} -->
-<!-- 			} -->
-<!-- 		} -->
-
-<!-- 		if (currentOkGroup) { -->
-<!-- 			result.push(currentOkGroup); -->
-<!-- 		} -->
-
-<!-- 		return result; -->
-<!-- 	}); -->
-
-<!-- 	onMount(() => { -->
-<!-- 		const unlisten = getCurrentWebview().onDragDropEvent((event) => { -->
-<!-- 			if (event.payload.type === 'drop') { -->
-<!-- 				const nativePaths = event.payload.paths; -->
-<!-- 				const mappedFiles = nativePaths.map((filePath) => ({ -->
-<!-- 					name: filePath.split(/[/\\]/).pop(), -->
-<!-- 					path: filePath -->
-<!-- 				})); -->
-<!-- 				handleFiles(mappedFiles); -->
-<!-- 			} -->
-<!-- 		}); -->
-
-<!-- 		return () => { -->
-<!-- 			unlisten.then((f) => f()); -->
-<!-- 		}; -->
-<!-- 	}); -->
-<!-- </script> -->
-
-<!-- <svelte:window on:dragover|preventDefault on:drop|preventDefault /> -->
-
-<!-- <div class="app-container" class:has-files={files.length > 0} class:collapsed={isSidebarCollapsed}> -->
-<!-- 	<aside class="sidebar-area"> -->
-<!-- 		{#if files.length > 0} -->
-<!-- 			<div class="sidebar-header" transition:fade> -->
-<!-- 				<button on:click={() => (isSidebarCollapsed = !isSidebarCollapsed)}> -->
-<!-- 					{isSidebarCollapsed ? '➔' : '✕'} -->
-<!-- 				</button> -->
-<!-- 				{#if !isSidebarCollapsed} -->
-<!-- 					<span class="active-title">Aktiv: {activeFile?.name}</span> -->
-<!-- 				{/if} -->
-<!-- 			</div> -->
-
-<!-- 			<div class="file-list"> -->
-<!-- 				{#each files as file} -->
-<!-- 					<button -->
-<!-- 						class="file-item" -->
-<!-- 						class:active={activeFile === file} -->
-<!-- 						on:click={() => (activeFile = file)} -->
-<!-- 					> -->
-<!-- 						<span class="icon">📄</span> -->
-<!-- 						{#if !isSidebarCollapsed} -->
-<!-- 							<span class="text" transition:fade>{file.name}</span> -->
-<!-- 						{/if} -->
-<!-- 					</button> -->
-<!-- 				{/each} -->
-<!-- 			</div> -->
-<!-- 		{/if} -->
-
-<!-- 		<div> -->
-<!-- 			{#if files.length === 0} -->
-<!-- 				<div transition:fade> -->
-<!-- 					<div class="drop-container"> -->
-<!-- 						<div class="dropzone"> -->
-<!-- 							<p>Dateien (.xml, .pts) hierher ziehen</p> -->
-<!-- 							<span class="or-separator">oder</span> -->
-<!-- 							<button type="button" on:click={chooseFile}>Datei auswählen</button> -->
-<!-- 						</div> -->
-<!-- 					</div> -->
-<!-- 				</div> -->
-<!-- 			{:else} -->
-<!-- 				<div transition:fade style="width: 100%;"> -->
-<!-- 					<div class="dropzone"> -->
-<!-- 						<p>Dateien (.xml, .pts) hierher ziehen</p> -->
-<!-- 						<span class="or-separator">oder</span> -->
-<!-- 						<button type="button" on:click={chooseFile}>Datei auswählen</button> -->
-<!-- 					</div> -->
-<!-- 					<label for="file-input-mini" class="btn-mini"> -->
-<!-- 						{isSidebarCollapsed ? '＋' : '＋ Datei hinzufügen'} -->
-<!-- 					</label> -->
-<!-- 				</div> -->
-<!-- 			{/if} -->
-<!-- 		</div> -->
-<!-- 	</aside> -->
-
-<!-- 	<main class="main-content"> -->
-<!-- 		{#if files.length === 0} -->
-<!-- 			<div class="empty-state">Bitte lade eine Datei hoch, um zu beginnen.</div> -->
-<!-- 		{:else} -->
-<!-- 			<div class="viewer" transition:fade> -->
-<!-- 				<div class="filter-area"> -->
-<!-- 					<label class="switch-container"> -->
-<!-- 						<input type="checkbox" bind:checked={showCollapsed} /> -->
-<!-- 						<span class="switch-slider"></span> -->
-<!-- 						<span class="switch-label">Fehlerfreie Blöcke zusammenfassen</span> -->
-<!-- 					</label> -->
-<!-- 				</div> -->
-<!-- 				<div class="event-list"> -->
-<!-- 					{#each groupedEvents as item} -->
-<!-- 						{#if item.type === 'error'} -->
-<!-- 							<Event -->
-<!-- 								event={item.data} -->
-<!-- 								active={selectedEvent?.eventId === item.data.eventId} -->
-<!-- 								onSelect={() => (selectedEvent = item.data)} -->
-<!-- 							/> -->
-<!-- 						{:else if item.type === 'ok-flat'} -->
-<!-- 							<Event -->
-<!-- 								event={item.data} -->
-<!-- 								active={selectedEvent?.eventId === item.data.eventId} -->
-<!-- 								onSelect={() => (selectedEvent = item.data)} -->
-<!-- 							/> -->
-<!-- 						{:else} -->
-<!-- 							<div class="collapsed-card"> -->
-<!-- 								<span class="ok-badge">✓ OK</span> -->
-<!-- 								<span class="collapsed-text"> -->
-<!-- 									{item.count} fehlerfreie Sendungen übersprungen -->
-<!-- 								</span> -->
-<!-- 								<span class="collapsed-time"> -->
-<!-- 									{formatTime(item.startTime)} - {formatTime(item.endTime)} -->
-<!-- 								</span> -->
-<!-- 							</div> -->
-<!-- 						{/if} -->
-<!-- 					{:else} -->
-<!-- 						<div class="empty-state"> -->
-<!-- 							<p>Es wurden noch keine XML-Events geladen.</p> -->
-<!-- 						</div> -->
-<!-- 					{/each} -->
-<!-- 				</div> -->
-<!-- 			</div> -->
-<!-- 		{/if} -->
-<!-- 	</main> -->
-<!-- </div> -->
-
-<!-- <style> -->
-<!-- 	.logo.vite:hover { -->
-<!-- 		filter: drop-shadow(0 0 2em #747bff); -->
-<!-- 	} -->
-
-<!-- 	.logo.svelte-kit:hover { -->
-<!-- 		filter: drop-shadow(0 0 2em #ff3e00); -->
-<!-- 	} -->
-
-<!-- 	:root { -->
-<!-- 		font-family: Inter, Avenir, Helvetica, Arial, sans-serif; -->
-<!-- 		font-size: 16px; -->
-<!-- 		line-height: 24px; -->
-<!-- 		font-weight: 400; -->
-
-<!-- 		color: #0f0f0f; -->
-<!-- 		background-color: #f6f6f6; -->
-
-<!-- 		font-synthesis: none; -->
-<!-- 		text-rendering: optimizeLegibility; -->
-<!-- 		-webkit-font-smoothing: antialiased; -->
-<!-- 		-moz-osx-font-smoothing: grayscale; -->
-<!-- 		-webkit-text-size-adjust: 100%; -->
-<!-- 	} -->
-
-<!-- 	.container { -->
-<!-- 		margin: 0; -->
-<!-- 		padding-top: 10vh; -->
-<!-- 		display: flex; -->
-<!-- 		flex-direction: column; -->
-<!-- 		justify-content: center; -->
-<!-- 		text-align: center; -->
-<!-- 	} -->
-
-<!-- 	.logo { -->
-<!-- 		height: 6em; -->
-<!-- 		padding: 1.5em; -->
-<!-- 		will-change: filter; -->
-<!-- 		transition: 0.75s; -->
-<!-- 	} -->
-
-<!-- 	.logo.tauri:hover { -->
-<!-- 		filter: drop-shadow(0 0 2em #24c8db); -->
-<!-- 	} -->
-
-<!-- 	.row { -->
-<!-- 		display: flex; -->
-<!-- 		justify-content: center; -->
-<!-- 	} -->
-
-<!-- 	a { -->
-<!-- 		font-weight: 500; -->
-<!-- 		color: #646cff; -->
-<!-- 		text-decoration: inherit; -->
-<!-- 	} -->
-
-<!-- 	a:hover { -->
-<!-- 		color: #535bf2; -->
-<!-- 	} -->
-
-<!-- 	h1 { -->
-<!-- 		text-align: center; -->
-<!-- 	} -->
-
-<!-- 	input, -->
-<!-- 	button { -->
-<!-- 		border-radius: 8px; -->
-<!-- 		border: 1px solid transparent; -->
-<!-- 		padding: 0.6em 1.2em; -->
-<!-- 		font-size: 1em; -->
-<!-- 		font-weight: 500; -->
-<!-- 		font-family: inherit; -->
-<!-- 		color: #0f0f0f; -->
-<!-- 		background-color: #ffffff; -->
-<!-- 		transition: border-color 0.25s; -->
-<!-- 		box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2); -->
-<!-- 	} -->
-
-<!-- 	button { -->
-<!-- 		cursor: pointer; -->
-<!-- 	} -->
-
-<!-- 	button:hover { -->
-<!-- 		border-color: #396cd8; -->
-<!-- 	} -->
-<!-- 	button:active { -->
-<!-- 		border-color: #396cd8; -->
-<!-- 		background-color: #e8e8e8; -->
-<!-- 	} -->
-
-<!-- 	.btn-process { -->
-<!-- 		background-color: #396cd8; -->
-<!-- 		color: white; -->
-<!-- 		margin: 10px auto; -->
-<!-- 		display: block; -->
-<!-- 		max-width: 200px; -->
-<!-- 	} -->
-
-<!-- 	.loaded-file-info { -->
-<!-- 		margin: 10px 0; -->
-<!-- 		font-size: 0.95em; -->
-<!-- 	} -->
-
-<!-- 	input, -->
-<!-- 	button { -->
-<!-- 		outline: none; -->
-<!-- 	} -->
-
-<!-- 	@media (prefers-color-scheme: dark) { -->
-<!-- 		:root { -->
-<!-- 			color: #f6f6f6; -->
-<!-- 			background-color: #2f2f2f; -->
-<!-- 		} -->
-
-<!-- 		a:hover { -->
-<!-- 			color: #24c8db; -->
-<!-- 		} -->
-
-<!-- 		input, -->
-<!-- 		button { -->
-<!-- 			color: #ffffff; -->
-<!-- 			background-color: #0f0f0f98; -->
-<!-- 		} -->
-<!-- 		button:active { -->
-<!-- 			background-color: #0f0f0f69; -->
-<!-- 		} -->
-<!-- 	} -->
-
-<!-- 	.drop-container { -->
-<!-- 		display: flex; -->
-<!-- 		justify-content: center; -->
-<!-- 		margin: 20px 0; -->
-<!-- 	} -->
-
-<!-- 	.dropzone { -->
-<!-- 		width: 80%; -->
-<!-- 		max-width: 500px; -->
-<!-- 		padding: 30px; -->
-<!-- 		border: 2px dashed #396cd8; -->
-<!-- 		border-radius: 12px; -->
-<!-- 		background-color: #ffffff; -->
-<!-- 		display: flex; -->
-<!-- 		flex-direction: column; -->
-<!-- 		align-items: center; -->
-<!-- 		gap: 10px; -->
-<!-- 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); -->
-<!-- 		transition: -->
-<!-- 			background-color 0.2s, -->
-<!-- 			border-color 0.2s; -->
-<!-- 	} -->
-
-<!-- 	.or-separator { -->
-<!-- 		font-size: 0.9em; -->
-<!-- 		color: #666; -->
-<!-- 		font-style: italic; -->
-<!-- 	} -->
-
-<!-- 	.filter-area { -->
-<!-- 		display: flex; -->
-<!-- 		justify-content: center; -->
-<!-- 		padding: 10px 0; -->
-<!-- 		margin-bottom: 15px; -->
-<!-- 	} -->
-
-<!-- 	.switch-container { -->
-<!-- 		display: inline-flex; -->
-<!-- 		align-items: center; -->
-<!-- 		cursor: pointer; -->
-<!-- 		gap: 10px; -->
-<!-- 		user-select: none; -->
-<!-- 		font-size: 14px; -->
-<!-- 		color: #475569; -->
-<!-- 	} -->
-
-<!-- 	.switch-container input { -->
-<!-- 		display: none; -->
-<!-- 	} -->
-
-<!-- 	.switch-slider { -->
-<!-- 		position: relative; -->
-<!-- 		width: 40px; -->
-<!-- 		height: 20px; -->
-<!-- 		background-color: #cbd5e1; -->
-<!-- 		border-radius: 20px; -->
-<!-- 		transition: background-color 0.2s; -->
-<!-- 	} -->
-
-<!-- 	.switch-slider::before { -->
-<!-- 		content: ''; -->
-<!-- 		position: absolute; -->
-<!-- 		width: 16px; -->
-<!-- 		height: 16px; -->
-<!-- 		left: 2px; -->
-<!-- 		bottom: 2px; -->
-<!-- 		background-color: white; -->
-<!-- 		border-radius: 50%; -->
-<!-- 		transition: transform 0.2s; -->
-<!-- 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); -->
-<!-- 	} -->
-
-<!-- 	.switch-container input:checked + .switch-slider { -->
-<!-- 		background-color: #3b82f6; -->
-<!-- 	} -->
-
-<!-- 	.switch-container input:checked + .switch-slider::before { -->
-<!-- 		transform: translateX(20px); -->
-<!-- 	} -->
-
-<!-- 	.collapsed-card { -->
-<!-- 		display: flex; -->
-<!-- 		align-items: center; -->
-<!-- 		justify-content: space-between; -->
-<!-- 		background: #ffffff; -->
-<!-- 		border: 1px solid #e2e8f0; -->
-<!-- 		border-radius: 8px; -->
-<!-- 		padding: 10px 20px; -->
-<!-- 		margin: 8px auto; -->
-<!-- 		width: 80%; -->
-<!-- 		max-width: 600px; -->
-<!-- 		font-size: 13px; -->
-<!-- 		color: #475569; -->
-<!-- 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); -->
-<!-- 	} -->
-
-<!-- 	.ok-badge { -->
-<!-- 		background: #dcfce7; -->
-<!-- 		color: #15803d; -->
-<!-- 		padding: 2px 6px; -->
-<!-- 		border-radius: 4px; -->
-<!-- 		font-weight: bold; -->
-<!-- 		font-size: 11px; -->
-<!-- 	} -->
-
-<!-- 	.collapsed-text { -->
-<!-- 		font-weight: 500; -->
-<!-- 	} -->
-
-<!-- 	.collapsed-time { -->
-<!-- 		font-family: monospace; -->
-<!-- 		color: #64748b; -->
-<!-- 	} -->
-
-<!-- 	@media (prefers-color-scheme: dark) { -->
-<!-- 		.dropzone { -->
-<!-- 			background-color: #1e1e1e; -->
-<!-- 			border-color: #24c8db; -->
-<!-- 		} -->
-<!-- 		.or-separator { -->
-<!-- 			color: #aaa; -->
-<!-- 		} -->
-<!-- 		.switch-container { -->
-<!-- 			color: #94a3b8; -->
-<!-- 		} -->
-<!-- 		.switch-slider { -->
-<!-- 			background-color: #475569; -->
-<!-- 		} -->
-<!-- 		.switch-container input:checked + .switch-slider { -->
-<!-- 			background-color: #24c8db; -->
-<!-- 		} -->
-<!-- 		.collapsed-card { -->
-<!-- 			background: #1e1e1e; -->
-<!-- 			border-color: #334155; -->
-<!-- 			color: #94a3b8; -->
-<!-- 		} -->
-<!-- 		.ok-badge { -->
-<!-- 			background: #064e3b; -->
-<!-- 			color: #34d399; -->
-<!-- 		} -->
-<!-- 	} -->
-<!-- </style> -->
-
 <script>
 	import Event from './Event.svelte';
 	import { invoke } from '@tauri-apps/api/core';
@@ -544,7 +28,7 @@
 		return String(timeVal);
 	}
 
-	function handleFiles(newFiles) {
+	async function handleFiles(newFiles) {
 		let validAdded = false;
 		for (let file of newFiles) {
 			const ext = file.name.split('.').pop().toLowerCase();
@@ -553,8 +37,18 @@
 		}
 		if (validAdded && !activeFile) {
 			activeFile = files[0];
-			console.log(files);
-			console.log(files[0].path);
+			// console.log(files);
+			// console.log(files[0].path);
+			await runAutomaticParsing(activeFile);
+		}
+	}
+
+	async function runAutomaticParsing(file) {
+		try {
+			const answer = await invoke('parse_file', { path: file.path });
+			events = answer;
+		} catch (err) {
+			console.error('Fehler beim automatischen Parsen:', err);
 		}
 	}
 
@@ -587,7 +81,6 @@
 				console.log(element);
 			});
 
-			// Wenn das erste Element ein Objekt ist, zeigen wir den Titel an
 			parseFileMsg = typeof answer[0] === 'object' ? answer[0].title : answer[0];
 			events = answer;
 		} catch (err) {
@@ -595,7 +88,6 @@
 		}
 	}
 
-	// Svelte 5 Derived Rune für die automatische Gruppierung
 	let groupedEvents = $derived.by(() => {
 		if (!showCollapsed) {
 			return events.map((event) => ({
@@ -657,14 +149,14 @@
 </script>
 
 <main class="container">
-	{#if files.length > 0}
-		<div class="loaded-file-info">
-			Selected: <strong>{files[0].name}</strong>
-		</div>
-		<button type="button" class="btn-process" onclick={(event) => parseFile(event)}
-			>Daten auswerten</button
-		>
-	{/if}
+	<!-- {#if files.length > 0} -->
+	<!-- 	<div class="loaded-file-info"> -->
+	<!-- 		Selected: <strong>{files[0].name}</strong> -->
+	<!-- 	</div> -->
+	<!-- 	<button type="button" class="btn-process" onclick={(event) => parseFile(event)} -->
+	<!-- 		>Daten auswerten</button -->
+	<!-- 	> -->
+	<!-- {/if} -->
 
 	{#if groupedEvents.length > 0}
 		<div class="filter-area">
