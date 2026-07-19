@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { formatTime } from './helper';
 	import Event from './Event.svelte';
+	import CollapsedCard from './CollapsedCard.svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
 	import { getCurrentWebview } from '@tauri-apps/api/webview';
@@ -11,8 +11,6 @@
 	let selectedEvent = $state(null);
 	let files = $state([]);
 	let activeFile = $state(null);
-
-	let name = $state('');
 	let parseFileMsg = $state('');
 
 	async function handleFiles(newFiles) {
@@ -24,8 +22,6 @@
 		}
 		if (validAdded && !activeFile) {
 			activeFile = files[0];
-			// console.log(files);
-			// console.log(files[0].path);
 			await runAutomaticParsing(activeFile);
 		}
 	}
@@ -53,28 +49,6 @@
 			handleFiles([file]);
 		}
 	}
-
-	async function parseFile(event) {
-		if (event) event.preventDefault();
-		if (files.length === 0) {
-			alert('Bitte wähle zuerst eine Datei aus!');
-			return;
-		}
-
-		try {
-			const answer = await invoke('parse_file', { path: files[0].path });
-
-			answer.forEach((element) => {
-				console.log(element);
-			});
-
-			parseFileMsg = typeof answer[0] === 'object' ? answer[0].title : answer[0];
-			events = answer;
-		} catch (err) {
-			console.error('Fehler beim Laden durch Rust:', err);
-		}
-	}
-
 	let groupedEvents = $derived.by(() => {
 		if (!showCollapsed) {
 			return events.map((event) => ({
@@ -136,15 +110,6 @@
 </script>
 
 <main class="container">
-	<!-- {#if files.length > 0} -->
-	<!-- 	<div class="loaded-file-info"> -->
-	<!-- 		Selected: <strong>{files[0].name}</strong> -->
-	<!-- 	</div> -->
-	<!-- 	<button type="button" class="btn-process" onclick={(event) => parseFile(event)} -->
-	<!-- 		>Daten auswerten</button -->
-	<!-- 	> -->
-	<!-- {/if} -->
-
 	{#if groupedEvents.length > 0}
 		<div class="filter-area">
 			<label class="switch-container">
@@ -170,15 +135,7 @@
 					onSelect={() => (selectedEvent = item.data)}
 				/>
 			{:else}
-				<div class="collapsed-card">
-					<span class="ok-badge">✓ OK</span>
-					<span class="collapsed-text">
-						{item.count} fehlerfreie Sendungen übersprungen
-					</span>
-					<span class="collapsed-time">
-						{formatTime(item.startTime)} - {formatTime(item.endTime)}
-					</span>
-				</div>
+				<CollapsedCard {item} />
 			{/if}
 		{:else}
 			<div class="empty-state">
@@ -197,14 +154,6 @@
 </main>
 
 <style>
-	.logo.vite:hover {
-		filter: drop-shadow(0 0 2em #747bff);
-	}
-
-	.logo.svelte-kit:hover {
-		filter: drop-shadow(0 0 2em #ff3e00);
-	}
-
 	:root {
 		font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
 		font-size: 16px;
@@ -402,40 +351,6 @@
 
 	.switch-container input:checked + .switch-slider::before {
 		transform: translateX(20px);
-	}
-
-	.collapsed-card {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		background: #ffffff;
-		border: 1px solid #e2e8f0;
-		border-radius: 8px;
-		padding: 10px 20px;
-		margin: 8px auto;
-		width: 80%;
-		max-width: 600px;
-		font-size: 13px;
-		color: #475569;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-	}
-
-	.ok-badge {
-		background: #dcfce7;
-		color: #15803d;
-		padding: 2px 6px;
-		border-radius: 4px;
-		font-weight: bold;
-		font-size: 11px;
-	}
-
-	.collapsed-text {
-		font-weight: 500;
-	}
-
-	.collapsed-time {
-		font-family: monospace;
-		color: #64748b;
 	}
 
 	@media (prefers-color-scheme: dark) {
