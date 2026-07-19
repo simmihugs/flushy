@@ -1,13 +1,6 @@
-<script>
+<script lang="ts">
+	import { formatTime } from './helper';
 	let { event, active = false, onSelect } = $props();
-
-	function formatTime(timeVal) {
-		if (!timeVal) return '';
-		const date = new Date(timeVal);
-		return isNaN(date.getTime())
-			? String(timeVal)
-			: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-	}
 </script>
 
 <div class="event-card" class:active class:has-error={event.hasError}>
