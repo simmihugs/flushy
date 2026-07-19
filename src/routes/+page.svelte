@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+	import { formatTime } from './helper';
 	import Event from './Event.svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
@@ -13,20 +14,6 @@
 
 	let name = $state('');
 	let parseFileMsg = $state('');
-
-	function formatTime(timeVal) {
-		if (!timeVal) return '';
-		if (typeof timeVal === 'string' && timeVal.includes(':')) {
-			return timeVal.split(' ')[0];
-		}
-		try {
-			const date = new Date(timeVal);
-			if (!isNaN(date.getTime())) {
-				return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-			}
-		} catch (e) {}
-		return String(timeVal);
-	}
 
 	async function handleFiles(newFiles) {
 		let validAdded = false;
