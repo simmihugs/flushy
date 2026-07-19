@@ -24,32 +24,19 @@
 </aside>
 
 <style>
-	:root {
-		font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-		font-size: 16px;
-		line-height: 24px;
-		font-weight: 400;
-
-		color: #0f0f0f;
-		background-color: #f6f6f6;
-
-		font-synthesis: none;
-		text-rendering: optimizeLegibility;
-		-webkit-font-smoothing: antialiased;
-		-moz-osx-font-smoothing: grayscale;
-		-webkit-text-size-adjust: 100%;
-	}
-
-	.container {
-		margin: 0;
-		padding-top: 10vh;
+	.sidebar {
 		display: flex;
 		flex-direction: column;
-		justify-content: center;
-		text-align: center;
+		height: 100%;
+		padding: 20px;
 	}
 
-	input,
+	.file-list {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+
 	button {
 		border-radius: 8px;
 		border: 1px solid transparent;
@@ -61,56 +48,16 @@
 		background-color: #ffffff;
 		transition: border-color 0.25s;
 		box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-	}
-
-	button {
 		cursor: pointer;
 	}
 
 	button:hover {
 		border-color: #396cd8;
 	}
+
 	button:active {
 		border-color: #396cd8;
 		background-color: #e8e8e8;
-	}
-
-	.btn-process {
-		background-color: #396cd8;
-		color: white;
-		margin: 10px auto;
-		display: block;
-		max-width: 200px;
-	}
-
-	.loaded-file-info {
-		margin: 10px 0;
-		font-size: 0.95em;
-	}
-
-	input,
-	button {
-		outline: none;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		:root {
-			color: #f6f6f6;
-			background-color: #2f2f2f;
-		}
-
-		a:hover {
-			color: #24c8db;
-		}
-
-		input,
-		button {
-			color: #ffffff;
-			background-color: #0f0f0f98;
-		}
-		button:active {
-			background-color: #0f0f0f69;
-		}
 	}
 
 	.drop-container {
@@ -142,82 +89,20 @@
 		font-style: italic;
 	}
 
-	.filter-area {
-		display: flex;
-		justify-content: center;
-		padding: 10px 0;
-		margin-bottom: 15px;
-	}
-
-	.switch-container {
-		display: inline-flex;
-		align-items: center;
-		cursor: pointer;
-		gap: 10px;
-		user-select: none;
-		font-size: 14px;
-		color: #475569;
-	}
-
-	.switch-container input {
-		display: none;
-	}
-
-	.switch-slider {
-		position: relative;
-		width: 40px;
-		height: 20px;
-		background-color: #cbd5e1;
-		border-radius: 20px;
-		transition: background-color 0.2s;
-	}
-
-	.switch-slider::before {
-		content: '';
-		position: absolute;
-		width: 16px;
-		height: 16px;
-		left: 2px;
-		bottom: 2px;
-		background-color: white;
-		border-radius: 50%;
-		transition: transform 0.2s;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-	}
-
-	.switch-container input:checked + .switch-slider {
-		background-color: #3b82f6;
-	}
-
-	.switch-container input:checked + .switch-slider::before {
-		transform: translateX(20px);
-	}
-
 	@media (prefers-color-scheme: dark) {
+		button {
+			color: #ffffff;
+			background-color: #0f0f0f98;
+		}
+		button:active {
+			background-color: #0f0f0f69;
+		}
 		.dropzone {
 			background-color: #1e1e1e;
 			border-color: #24c8db;
 		}
 		.or-separator {
 			color: #aaa;
-		}
-		.switch-container {
-			color: #94a3b8;
-		}
-		.switch-slider {
-			background-color: #475569;
-		}
-		.switch-container input:checked + .switch-slider {
-			background-color: #24c8db;
-		}
-		.collapsed-card {
-			background: #1e1e1e;
-			border-color: #334155;
-			color: #94a3b8;
-		}
-		.ok-badge {
-			background: #064e3b;
-			color: #34d399;
 		}
 	}
 </style>
