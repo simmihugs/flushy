@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { formatTime } from './helper';
 	import Event from './Event.svelte';
 	import CollapsedCard from './CollapsedCard.svelte';
 	import { invoke } from '@tauri-apps/api/core';
@@ -23,8 +22,6 @@
 		}
 		if (validAdded && !activeFile) {
 			activeFile = files[0];
-			// console.log(files);
-			// console.log(files[0].path);
 			await runAutomaticParsing(activeFile);
 		}
 	}
@@ -52,28 +49,6 @@
 			handleFiles([file]);
 		}
 	}
-
-	// async function parseFile(event) {
-	// 	if (event) event.preventDefault();
-	// 	if (files.length === 0) {
-	// 		alert('Bitte wähle zuerst eine Datei aus!');
-	// 		return;
-	// 	}
-
-	// 	try {
-	// 		const answer = await invoke('parse_file', { path: files[0].path });
-
-	// 		answer.forEach((element) => {
-	// 			console.log(element);
-	// 		});
-
-	// 		parseFileMsg = typeof answer[0] === 'object' ? answer[0].title : answer[0];
-	// 		events = answer;
-	// 	} catch (err) {
-	// 		console.error('Fehler beim Laden durch Rust:', err);
-	// 	}
-	// }
-
 	let groupedEvents = $derived.by(() => {
 		if (!showCollapsed) {
 			return events.map((event) => ({
@@ -179,14 +154,6 @@
 </main>
 
 <style>
-	/* .logo.vite:hover { */
-	/* 	filter: drop-shadow(0 0 2em #747bff); */
-	/* } */
-
-	/* .logo.svelte-kit:hover { */
-	/* 	filter: drop-shadow(0 0 2em #ff3e00); */
-	/* } */
-
 	:root {
 		font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
 		font-size: 16px;

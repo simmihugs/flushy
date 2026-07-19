@@ -132,7 +132,6 @@ pub fn analyze_si_events(mut events: Vec<SiEventParsed>) -> Vec<SiEventParsed> {
     for i in 0..events.len() - 1 {
         let end_current = events[i].end_time;
         let start_next = events[i + 1].start_time;
-
         let diff = (start_next - end_current).num_milliseconds();
 
         if diff > 0 {

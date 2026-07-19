@@ -12,9 +12,6 @@
 
 	<div class="card-top">
 		<span class="event-id">{event.eventId}</span>
-		<!-- {#if event.hasError} -->
-		<!-- 	<span class="error-badge">⚠️ Fehler</span> -->
-		<!-- {/if} -->
 	</div>
 
 	<h3 class="event-title">{event.title}</h3>
@@ -44,6 +41,7 @@
 		flex-direction: column;
 		justify-content: space-between;
 		min-height: 110px;
+		max-width: 700px;
 		margin: 8px auto;
 	}
 
