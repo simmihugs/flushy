@@ -61,32 +61,50 @@
 		</div>
 	{/if}
 
-	<div class="event-list">
-		{#each groupedEvents as item}
-			{#if item.type === 'error'}
-				<Event
-					event={item.data}
-					active={selectedEvent?.eventId === item.data.eventId}
-					onSelect={() => (selectedEvent = item.data)}
-				/>
-			{:else if item.type === 'ok-flat'}
-				<Event
-					event={item.data}
-					active={selectedEvent?.eventId === item.data.eventId}
-					onSelect={() => (selectedEvent = item.data)}
-				/>
+	<div class="fileview">
+		<div class="event-list">
+			{#each groupedEvents as item}
+				{#if item.type === 'error'}
+					<Event
+						event={item.data}
+						active={selectedEvent?.eventId === item.data.eventId}
+						onSelect={() => (selectedEvent = item.data)}
+					/>
+				{:else if item.type === 'ok-flat'}
+					<Event
+						event={item.data}
+						active={selectedEvent?.eventId === item.data.eventId}
+						onSelect={() => (selectedEvent = item.data)}
+					/>
+				{:else}
+					<CollapsedCard {item} />
+				{/if}
 			{:else}
-				<CollapsedCard {item} />
-			{/if}
-		{:else}
-			<div class="empty-state">
-				<p>Es wurden noch keine XML-Events geladen.</p>
-			</div>
-		{/each}
+				<div class="empty-state">
+					<p>Es wurden noch keine XML-Events geladen.</p>
+				</div>
+			{/each}
+		</div>
+		<div class="details"></div>
 	</div>
 </div>
 
 <style>
+	.fileview {
+		display: flex;
+	}
+	.event-list {
+		min-width: 600px;
+		overflow-y: auto;
+		flex-grow: 1;
+	}
+	.details {
+		border-radius: 5px;
+		/* border: 2px dashed yellow; */
+		margin: 10px;
+		width: 200px;
+	}
+
 	.filter-area {
 		display: flex;
 		justify-content: center;

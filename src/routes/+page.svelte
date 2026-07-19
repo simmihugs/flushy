@@ -72,9 +72,19 @@
 	});
 </script>
 
-<main class="container">
-	<Sidebar {files} bind:activeFile onFileSelect={chooseFile} />
-	<FileView {showCollapsed} {activeFile} {selectedEvent} />
+<!-- <main class="container"> -->
+<!-- 	<Sidebar {files} bind:activeFile onFileSelect={chooseFile} /> -->
+<!-- 	<FileView {showCollapsed} {activeFile} {selectedEvent} /> -->
+<!-- </main> -->
+
+<main class="layout {files.length === 0 ? 'empty-state' : 'active-state'}">
+	<Sidebar {files} bind:activeFile onFileSelect={chooseFile} isExpanded={files.length > 0} />
+
+	{#if files.length > 0}
+		<section class="file-view-container">
+			<FileView {showCollapsed} {activeFile} {selectedEvent} />
+		</section>
+	{/if}
 </main>
 
 <style>
@@ -94,19 +104,80 @@
 		-webkit-text-size-adjust: 100%;
 	}
 
-	.container {
-		margin: 0;
-		padding-top: 10vh;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		text-align: center;
-	}
+	/* .container { */
+	/* 	margin: 0; */
+	/* 	padding-top: 10vh; */
+	/* 	display: flex; */
+	/* 	flex-direction: column; */
+	/* 	justify-content: center; */
+	/* 	text-align: center; */
+	/* } */
 
 	@media (prefers-color-scheme: dark) {
 		:root {
 			color: #f6f6f6;
 			background-color: #2f2f2f;
 		}
+	}
+
+	:global(body) {
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
+	}
+
+	.layout {
+		display: flex;
+		height: 100vh;
+		min-width: 100vw;
+		margin: 0;
+	}
+
+	.sidebar {
+		flex-shrink: 0;
+		width: 300px;
+	}
+
+	.empty-state {
+		justify-content: center;
+		align-items: center;
+	}
+
+	.sidebar.centered {
+		width: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	.active-state {
+		flex-direction: row;
+	}
+
+	.file-view-container {
+		flex: 1;
+		overflow-y: auto;
+	}
+
+	.sidebar.centered {
+		width: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.sidebar.expanded {
+		width: 300px;
+		flex-shrink: 0;
+		border-right: 1px solid #ccc;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+	}
+
+	.file-view-container {
+		display: flex;
+		flex-direction: row;
+		flex-grow: 1;
+		overflow-x: auto;
 	}
 </style>
