@@ -1,11 +1,13 @@
 <script lang="ts">
-	import Event from './Event.svelte';
-	import CollapsedCard from './CollapsedCard.svelte';
+	// import Event from './Event.svelte';
+	// import CollapsedCard from './CollapsedCard.svelte';
 	import type { MyFile } from './MyFile.ts';
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
 	import { getCurrentWebview } from '@tauri-apps/api/webview';
 	import { open } from '@tauri-apps/plugin-dialog';
+	import FileView from './FileView.svelte';
+	import Sidebar from './Sidebar.svelte';
 
 	let showCollapsed = $state(true);
 	let selectedEvent = $state(null);
@@ -54,50 +56,51 @@
 		}
 	}
 
-	let groupedEvents = $derived.by(() => {
-		if (activeFile != null) {
-			if (!showCollapsed) {
-				return activeFile.events.map((event) => ({
-					type: event.hasError ? 'error' : 'ok-flat',
-					data: event
-				}));
-			}
+	// let groupedEvents = $derived.by(() => {
+	// 	if (activeFile == null || !activeFile.events) {
+	// 		return [];
+	// 	}
 
-			const result = [];
-			let currentOkGroup = null;
+	// 	if (!showCollapsed) {
+	// 		return activeFile.events.map((event) => ({
+	// 			type: event.hasError ? 'error' : 'ok-flat',
+	// 			data: event
+	// 		}));
+	// 	}
 
-			for (const event of activeFile.events) {
-				if (event.hasError) {
-					if (currentOkGroup) {
-						result.push(currentOkGroup);
-						currentOkGroup = null;
-					}
-					result.push({ type: 'error', data: event });
-				} else {
-					if (!currentOkGroup) {
-						currentOkGroup = {
-							type: 'collapsed-ok',
-							count: 1,
-							startTime: event.startTime,
-							endTime: event.endTime,
-							events: [event]
-						};
-					} else {
-						currentOkGroup.count++;
-						currentOkGroup.endTime = event.endTime;
-						currentOkGroup.events.push(event);
-					}
-				}
-			}
+	// 	const result = [];
+	// 	let currentOkGroup = null;
 
-			if (currentOkGroup) {
-				result.push(currentOkGroup);
-			}
+	// 	for (const event of activeFile.events) {
+	// 		if (event.hasError) {
+	// 			if (currentOkGroup) {
+	// 				result.push(currentOkGroup);
+	// 				currentOkGroup = null;
+	// 			}
+	// 			result.push({ type: 'error', data: event });
+	// 		} else {
+	// 			if (!currentOkGroup) {
+	// 				currentOkGroup = {
+	// 					type: 'collapsed-ok',
+	// 					count: 1,
+	// 					startTime: event.startTime,
+	// 					endTime: event.endTime,
+	// 					events: [event]
+	// 				};
+	// 			} else {
+	// 				currentOkGroup.count++;
+	// 				currentOkGroup.endTime = event.endTime;
+	// 				currentOkGroup.events.push(event);
+	// 			}
+	// 		}
+	// 	}
 
-			return result;
-		}
-		return [];
-	});
+	// 	if (currentOkGroup) {
+	// 		result.push(currentOkGroup);
+	// 	}
+
+	// 	return result;
+	// });
 
 	onMount(() => {
 		const unlisten = getCurrentWebview().onDragDropEvent((event) => {
@@ -118,58 +121,61 @@
 </script>
 
 <main class="container">
-	<div class="drop-container">
-		<div class="dropzone">
-			<p>Dateien (.xml, .pts) hierher ziehen</p>
-			<span class="or-separator">oder</span>
-			<button type="button" onclick={chooseFile}>Datei auswählen</button>
-		</div>
-	</div>
-	<div>
-		<p>Active file:</p>
-		{#if activeFile}
-			<p>{activeFile.name}</p>
-		{/if}
-		<p>Files:</p>
-		{#if files}
-			{#each files as file}
-				<p>{file.name}</p>
-			{/each}
-		{/if}
-	</div>
-	{#if groupedEvents.length > 0}
-		<div class="filter-area">
-			<label class="switch-container">
-				<input type="checkbox" bind:checked={showCollapsed} />
-				<span class="switch-slider"></span>
-				<span class="switch-label">Fehlerfreie Blöcke zusammenfassen</span>
-			</label>
-		</div>
-	{/if}
+	<!-- <div class="drop-container"> -->
+	<!-- 	<div class="dropzone"> -->
+	<!-- 		<p>Dateien (.xml, .pts) hierher ziehen</p> -->
+	<!-- 		<span class="or-separator">oder</span> -->
+	<!-- 		<button type="button" onclick={chooseFile}>Datei auswählen</button> -->
+	<!-- 	</div> -->
+	<!-- </div> -->
+	<p>asdfasdf</p>
+	<Sidebar {files} bind:activeFile onFileSelect={chooseFile} />
+	<!-- <div> -->
+	<!-- 	<p>Active file:</p> -->
+	<!-- 	{#if activeFile} -->
+	<!-- 		<p>{activeFile.name}</p> -->
+	<!-- 	{/if} -->
+	<!-- 	<p>Files:</p> -->
+	<!-- 	{#if files} -->
+	<!-- 		{#each files as file} -->
+	<!-- 			<p>{file.name}</p> -->
+	<!-- 		{/each} -->
+	<!-- 	{/if} -->
+	<!-- </div> -->
+	<!-- {#if groupedEvents.length > 0} -->
+	<!-- 	<div class="filter-area"> -->
+	<!-- 		<label class="switch-container"> -->
+	<!-- 			<input type="checkbox" bind:checked={showCollapsed} /> -->
+	<!-- 			<span class="switch-slider"></span> -->
+	<!-- 			<span class="switch-label">Fehlerfreie Blöcke zusammenfassen</span> -->
+	<!-- 		</label> -->
+	<!-- 	</div> -->
+	<!-- {/if} -->
 
-	<div class="event-list">
-		{#each groupedEvents as item}
-			{#if item.type === 'error'}
-				<Event
-					event={item.data}
-					active={selectedEvent?.eventId === item.data.eventId}
-					onSelect={() => (selectedEvent = item.data)}
-				/>
-			{:else if item.type === 'ok-flat'}
-				<Event
-					event={item.data}
-					active={selectedEvent?.eventId === item.data.eventId}
-					onSelect={() => (selectedEvent = item.data)}
-				/>
-			{:else}
-				<CollapsedCard {item} />
-			{/if}
-		{:else}
-			<div class="empty-state">
-				<p>Es wurden noch keine XML-Events geladen.</p>
-			</div>
-		{/each}
-	</div>
+	<!-- <div class="event-list"> -->
+	<!-- 	{#each groupedEvents as item} -->
+	<!-- 		{#if item.type === 'error'} -->
+	<!-- 			<Event -->
+	<!-- 				event={item.data} -->
+	<!-- 				active={selectedEvent?.eventId === item.data.eventId} -->
+	<!-- 				onSelect={() => (selectedEvent = item.data)} -->
+	<!-- 			/> -->
+	<!-- 		{:else if item.type === 'ok-flat'} -->
+	<!-- 			<Event -->
+	<!-- 				event={item.data} -->
+	<!-- 				active={selectedEvent?.eventId === item.data.eventId} -->
+	<!-- 				onSelect={() => (selectedEvent = item.data)} -->
+	<!-- 			/> -->
+	<!-- 		{:else} -->
+	<!-- 			<CollapsedCard {item} /> -->
+	<!-- 		{/if} -->
+	<!-- 	{:else} -->
+	<!-- 		<div class="empty-state"> -->
+	<!-- 			<p>Es wurden noch keine XML-Events geladen.</p> -->
+	<!-- 		</div> -->
+	<!-- 	{/each} -->
+	<!-- </div> -->
+	<FileView {showCollapsed} {activeFile} {selectedEvent} />
 </main>
 
 <style>
@@ -195,36 +201,6 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
-		text-align: center;
-	}
-
-	.logo {
-		height: 6em;
-		padding: 1.5em;
-		will-change: filter;
-		transition: 0.75s;
-	}
-
-	.logo.tauri:hover {
-		filter: drop-shadow(0 0 2em #24c8db);
-	}
-
-	.row {
-		display: flex;
-		justify-content: center;
-	}
-
-	a {
-		font-weight: 500;
-		color: #646cff;
-		text-decoration: inherit;
-	}
-
-	a:hover {
-		color: #535bf2;
-	}
-
-	h1 {
 		text-align: center;
 	}
 
