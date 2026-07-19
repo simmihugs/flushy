@@ -1,8 +1,19 @@
 <script lang="ts">
 	import Event from './Event.svelte';
 	import CollapsedCard from './CollapsedCard.svelte';
+	import DetailsComponent from './DetailsComponent.svelte';
 
-	let { showCollapsed = $bindable(), activeFile, selectedEvent = $bindable() } = $props();
+	let { showCollapsed = $bindable(), activeFile } = $props();
+	let selectedEvent = $state(null);
+	function toggleSelection(event) {
+		if (selectedEvent?.eventId === event.eventId) {
+			selectedEvent = null;
+		} else {
+			selectedEvent = event;
+		}
+		console.log(`selected event ${selectedEvent}`);
+	}
+
 	let groupedEvents = $derived.by(() => {
 		if (activeFile == null || !activeFile.events) {
 			return [];
@@ -48,6 +59,12 @@
 
 		return result;
 	});
+
+	function handleScroll(e) {
+		if (e.target.scrollTop > 5) {
+			selectedEvent = null;
+		}
+	}
 </script>
 
 <div>
@@ -62,19 +79,19 @@
 	{/if}
 
 	<div class="fileview">
-		<div class="event-list">
+		<div class="event-list" onscroll={handleScroll}>
 			{#each groupedEvents as item}
 				{#if item.type === 'error'}
 					<Event
 						event={item.data}
 						active={selectedEvent?.eventId === item.data.eventId}
-						onSelect={() => (selectedEvent = item.data)}
+						onSelect={() => toggleSelection(item.data)}
 					/>
 				{:else if item.type === 'ok-flat'}
 					<Event
 						event={item.data}
 						active={selectedEvent?.eventId === item.data.eventId}
-						onSelect={() => (selectedEvent = item.data)}
+						onSelect={() => toggleSelection(item.data)}
 					/>
 				{:else}
 					<CollapsedCard {item} />
@@ -85,24 +102,30 @@
 				</div>
 			{/each}
 		</div>
-		<div class="details"></div>
+		<div class="details">
+			{#if selectedEvent}
+				<DetailsComponent event={selectedEvent} />
+			{/if}
+		</div>
 	</div>
 </div>
 
 <style>
 	.fileview {
 		display: flex;
+		flex: 1;
 	}
+
 	.event-list {
-		min-width: 600px;
+		flex: 1;
+		min-width: 0;
 		overflow-y: auto;
-		flex-grow: 1;
+		width: 60vw;
 	}
+
 	.details {
-		border-radius: 5px;
-		/* border: 2px dashed yellow; */
-		margin: 10px;
-		width: 200px;
+		min-width: 300px;
+		max-width: 500px;
 	}
 
 	.filter-area {

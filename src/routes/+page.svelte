@@ -8,7 +8,7 @@
 	import Sidebar from './Sidebar.svelte';
 
 	let showCollapsed = $state(true);
-	let selectedEvent = $state(null);
+
 	let files = $state<MyFile[]>([]);
 	let activeFile = $state<MyFile | null>(null);
 
@@ -72,18 +72,12 @@
 	});
 </script>
 
-<!-- <main class="container"> -->
-<!-- 	<Sidebar {files} bind:activeFile onFileSelect={chooseFile} /> -->
-<!-- 	<FileView {showCollapsed} {activeFile} {selectedEvent} /> -->
-<!-- </main> -->
-
 <main class="layout {files.length === 0 ? 'empty-state' : 'active-state'}">
 	<Sidebar {files} bind:activeFile onFileSelect={chooseFile} isExpanded={files.length > 0} />
-
 	{#if files.length > 0}
-		<section class="file-view-container">
-			<FileView {showCollapsed} {activeFile} {selectedEvent} />
-		</section>
+		<div class="file-view-container">
+			<FileView {showCollapsed} {activeFile} />
+		</div>
 	{/if}
 </main>
 
@@ -104,15 +98,6 @@
 		-webkit-text-size-adjust: 100%;
 	}
 
-	/* .container { */
-	/* 	margin: 0; */
-	/* 	padding-top: 10vh; */
-	/* 	display: flex; */
-	/* 	flex-direction: column; */
-	/* 	justify-content: center; */
-	/* 	text-align: center; */
-	/* } */
-
 	@media (prefers-color-scheme: dark) {
 		:root {
 			color: #f6f6f6;
@@ -129,13 +114,15 @@
 	.layout {
 		display: flex;
 		height: 100vh;
-		min-width: 100vw;
+		width: 100vw;
 		margin: 0;
+		overflow: hidden;
 	}
 
 	.sidebar {
-		flex-shrink: 0;
-		width: 300px;
+		flex: 0 0 300px;
+		/* flex-shrink: 0; */
+		/* width: 300px; */
 	}
 
 	.empty-state {
@@ -154,8 +141,19 @@
 	}
 
 	.file-view-container {
+		display: flex;
+		/* flex-direction: row; */
 		flex: 1;
-		overflow-y: auto;
+		/* width: 100%; */
+		/* overflow: hidden; */
+		min-width: 0;
+	}
+
+	.cool {
+		border: 2px solid red;
+		flex: 1;
+		min-width: 0;
+		display: flex;
 	}
 
 	.sidebar.centered {

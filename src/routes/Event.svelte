@@ -3,7 +3,7 @@
 	let { event, active = false, onSelect } = $props();
 </script>
 
-<div class="event-card" class:active class:has-error={event.hasError}>
+<div class="event-card" class:active class:has-error={event.hasError} onclick={onSelect}>
 	<div class="error-indicators">
 		{#if event.errorFront}
 			<span class="error-badge front">⚠️ Front Error: {event.errorFront}</span>
@@ -40,9 +40,14 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
+
 		min-height: 110px;
-		max-width: 700px;
-		margin: 8px auto;
+		/* max-width: 700px; */
+		/* margin: 8px auto; */
+
+		width: 100%;
+		margin: 8px 0;
+		box-sizing: border-box;
 	}
 
 	.event-card:hover {
@@ -58,6 +63,11 @@
 	.event-card.has-error {
 		border-color: #f87171;
 		background: #fef2f2;
+	}
+
+	.event-card.has-error:hover {
+		border-color: #ed4747 !important;
+		background: #f87171 !important;
 	}
 
 	.card-top {
