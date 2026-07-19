@@ -1,35 +1,39 @@
 <script lang="ts">
 	import Event from './Event.svelte';
 	import CollapsedCard from './CollapsedCard.svelte';
+	import type { MyFile } from './MyFile.ts';
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
 	import { getCurrentWebview } from '@tauri-apps/api/webview';
 	import { open } from '@tauri-apps/plugin-dialog';
 
 	let showCollapsed = $state(true);
-	let events = $state([]);
 	let selectedEvent = $state(null);
-	let files = $state([]);
-	let activeFile = $state(null);
-	let parseFileMsg = $state('');
+	let files = $state<MyFile[]>([]);
+	let activeFile = $state<MyFile | null>(null);
 
-	async function handleFiles(newFiles) {
+	async function handleFiles(newFiles: { name: string; path: string }[]) {
 		let validAdded = false;
 		for (let file of newFiles) {
-			const ext = file.name.split('.').pop().toLowerCase();
-			files = [...files, file];
+			const myfile: MyFile = {
+				name: file.name,
+				path: file.path,
+				events: []
+			};
+
+			files = [...files, myfile];
 			validAdded = true;
 		}
-		if (validAdded && !activeFile) {
-			activeFile = files[0];
+		if (validAdded) {
+			activeFile = files[files.length - 1];
 			await runAutomaticParsing(activeFile);
 		}
 	}
 
-	async function runAutomaticParsing(file) {
+	async function runAutomaticParsing(file: MyFile) {
 		try {
 			const answer = await invoke('parse_file', { path: file.path });
-			events = answer;
+			file.events = answer as any[];
 		} catch (err) {
 			console.error('Fehler beim automatischen Parsen:', err);
 		}
@@ -41,54 +45,58 @@
 			filters: [{ name: 'Daten', extensions: ['xml', 'pts'] }]
 		});
 
-		if (selected) {
+		if (typeof selected === 'string') {
 			const file = {
-				name: selected.split(/[/\\]/).pop(),
+				name: selected.split(/[/\\]/).pop() ?? 'unknownfile',
 				path: selected
 			};
 			handleFiles([file]);
 		}
 	}
+
 	let groupedEvents = $derived.by(() => {
-		if (!showCollapsed) {
-			return events.map((event) => ({
-				type: event.hasError ? 'error' : 'ok-flat',
-				data: event
-			}));
-		}
+		if (activeFile != null) {
+			if (!showCollapsed) {
+				return activeFile.events.map((event) => ({
+					type: event.hasError ? 'error' : 'ok-flat',
+					data: event
+				}));
+			}
 
-		const result = [];
-		let currentOkGroup = null;
+			const result = [];
+			let currentOkGroup = null;
 
-		for (const event of events) {
-			if (event.hasError) {
-				if (currentOkGroup) {
-					result.push(currentOkGroup);
-					currentOkGroup = null;
-				}
-				result.push({ type: 'error', data: event });
-			} else {
-				if (!currentOkGroup) {
-					currentOkGroup = {
-						type: 'collapsed-ok',
-						count: 1,
-						startTime: event.startTime,
-						endTime: event.endTime,
-						events: [event]
-					};
+			for (const event of activeFile.events) {
+				if (event.hasError) {
+					if (currentOkGroup) {
+						result.push(currentOkGroup);
+						currentOkGroup = null;
+					}
+					result.push({ type: 'error', data: event });
 				} else {
-					currentOkGroup.count++;
-					currentOkGroup.endTime = event.endTime;
-					currentOkGroup.events.push(event);
+					if (!currentOkGroup) {
+						currentOkGroup = {
+							type: 'collapsed-ok',
+							count: 1,
+							startTime: event.startTime,
+							endTime: event.endTime,
+							events: [event]
+						};
+					} else {
+						currentOkGroup.count++;
+						currentOkGroup.endTime = event.endTime;
+						currentOkGroup.events.push(event);
+					}
 				}
 			}
-		}
 
-		if (currentOkGroup) {
-			result.push(currentOkGroup);
-		}
+			if (currentOkGroup) {
+				result.push(currentOkGroup);
+			}
 
-		return result;
+			return result;
+		}
+		return [];
 	});
 
 	onMount(() => {
@@ -96,8 +104,8 @@
 			if (event.payload.type === 'drop') {
 				const nativePaths = event.payload.paths;
 				const mappedFiles = nativePaths.map((filePath) => ({
-					name: filePath.split(/[/\\]/).pop(),
-					path: filePath
+					name: filePath.split(/[/\\]/).pop() ?? 'unknown filename',
+					path: filePath ?? 'unknown path'
 				}));
 				handleFiles(mappedFiles);
 			}
@@ -110,6 +118,25 @@
 </script>
 
 <main class="container">
+	<div class="drop-container">
+		<div class="dropzone">
+			<p>Dateien (.xml, .pts) hierher ziehen</p>
+			<span class="or-separator">oder</span>
+			<button type="button" onclick={chooseFile}>Datei auswählen</button>
+		</div>
+	</div>
+	<div>
+		<p>Active file:</p>
+		{#if activeFile}
+			<p>{activeFile.name}</p>
+		{/if}
+		<p>Files:</p>
+		{#if files}
+			{#each files as file}
+				<p>{file.name}</p>
+			{/each}
+		{/if}
+	</div>
 	{#if groupedEvents.length > 0}
 		<div class="filter-area">
 			<label class="switch-container">
@@ -142,14 +169,6 @@
 				<p>Es wurden noch keine XML-Events geladen.</p>
 			</div>
 		{/each}
-	</div>
-
-	<div class="drop-container">
-		<div class="dropzone">
-			<p>Dateien (.xml, .pts) hierher ziehen</p>
-			<span class="or-separator">oder</span>
-			<button type="button" onclick={chooseFile}>Datei auswählen</button>
-		</div>
 	</div>
 </main>
 
