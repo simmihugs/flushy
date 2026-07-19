@@ -4,11 +4,17 @@
 </script>
 
 <div class="event-card" class:active class:has-error={event.hasError}>
+	<div class="error-indicators">
+		{#if event.errorFront}
+			<span class="error-badge front">⚠️ Front Error: {event.errorFront}</span>
+		{/if}
+	</div>
+
 	<div class="card-top">
 		<span class="event-id">{event.eventId}</span>
-		{#if event.hasError}
-			<span class="error-badge">⚠️ Fehler</span>
-		{/if}
+		<!-- {#if event.hasError} -->
+		<!-- 	<span class="error-badge">⚠️ Fehler</span> -->
+		<!-- {/if} -->
 	</div>
 
 	<h3 class="event-title">{event.title}</h3>
@@ -17,6 +23,11 @@
 		<span class="time">
 			{formatTime(event.startTime)} - {formatTime(event.endTime)}
 		</span>
+	</div>
+	<div class="error-indicators">
+		{#if event.errorBack}
+			<span class="error-badge back">⚠️ Back Error: {event.errorBack}</span>
+		{/if}
 	</div>
 </div>
 
@@ -33,6 +44,7 @@
 		flex-direction: column;
 		justify-content: space-between;
 		min-height: 110px;
+		margin: 8px auto;
 	}
 
 	.event-card:hover {
@@ -75,5 +87,10 @@
 	.card-bottom {
 		font-size: 12px;
 		color: #475569;
+	}
+
+	.error-indicators {
+		display: flex;
+		gap: 4px;
 	}
 </style>
