@@ -3,6 +3,110 @@ use roxmltree;
 use serde::Serialize;
 use std::{fs::File, io::Read};
 
+pub fn a_duration_from_string(string: String) -> Result<i64, String> {
+    let fmt = "00 %H:%M:%S%.3f";
+    let step = NaiveTime::parse_from_str("00 00:00:00.000", "00 %H:%M:%S%.3f").unwrap();
+    let naivetime = NaiveTime::parse_from_str(&string, fmt);
+    match naivetime {
+        Ok(time) => {
+            let dur: Duration = time - step;
+            Ok(dur.num_milliseconds())
+        }
+        Err(..) => Err(format!("invalid duration {}", string)),
+    }
+}
+
+pub fn calculate_endtime(
+    duration: i64,
+    start_time: DateTime<Utc>,
+) -> Result<DateTime<Utc>, String> {
+    match chrono::TimeDelta::try_milliseconds(duration) {
+        Some(duration) => Ok(start_time + duration),
+        None => Err(format!("Invalid duration {}", duration)),
+    }
+}
+
+pub fn a_starttime_from_str(string: String) -> Result<DateTime<Utc>, String> {
+    let dt = NaiveDateTime::parse_from_str(&string, "%Y-%m-%dT%H:%M:%S%.3fZ");
+    match dt {
+        Ok(dtt) => {
+            let dt2: LocalResult<DateTime<Utc>> = Utc.from_local_datetime(&dtt);
+            Ok(dt2.unwrap())
+        }
+        Err(..) => Err(format!("invalid timestring {}", string)),
+    }
+}
+
+pub fn parse_si_events(
+    contents: &String,
+    si_events: Vec<roxmltree::Node<'_, '_>>,
+) -> Result<Vec<SiEventParsed>, String> {
+    si_events
+        .iter()
+        .map(|node| {
+            let xml_string = String::from(&contents[node.range()]);
+            let event_id = node
+                .attribute("eventId")
+                .ok_or("Fehler: EventId fehlt")?
+                .to_string();
+            let title = node
+                .attribute("title")
+                .ok_or("Fehler: Title fehlt")?
+                .to_string();
+
+            let duration: i64 = a_duration_from_string(
+                node.attribute("duration")
+                    .ok_or("Fehler: duration fehlt")?
+                    .to_string(),
+            )?;
+            let start_time = a_starttime_from_str(
+                node.attribute("startTime")
+                    .ok_or("Fehler: startTime fehlt")?
+                    .to_string(),
+            )?;
+            let end_time = calculate_endtime(duration, start_time)?;
+            let mut displayed_start: DateTime<chrono::Utc> = start_time;
+            let mut displayed_end: DateTime<chrono::Utc> = end_time;
+
+            for child in node.descendants().filter(|c| c.has_tag_name("siStandard")) {
+                let dd = a_duration_from_string(
+                    child
+                        .attribute("displayedDuration")
+                        .ok_or("Fehler: displayedDuration fehlt")?
+                        .to_string(),
+                )?;
+                displayed_start = a_starttime_from_str(
+                    child
+                        .attribute("displayedStart")
+                        .ok_or("Fehler: displayedStart fehlt")?
+                        .to_string(),
+                )?;
+                displayed_end = calculate_endtime(dd, displayed_start)?;
+            }
+
+            let error_front = None;
+            let error_back = None;
+            let has_error = false;
+
+            Ok(SiEventParsed {
+                event_id,
+                title,
+
+                start_time,
+                end_time,
+                displayed_start,
+                displayed_end,
+
+                error_front,
+                error_back,
+                has_error,
+
+                xml_string,
+            })
+        })
+        .collect()
+}
+
 #[tauri::command]
 fn parse_file(path: String) -> Result<Vec<SiEventParsed>, String> {
     let mut file = File::open(&path).map_err(|e| format!("Fehler beim Öffnen der Datei: {}", e))?;
@@ -19,10 +123,9 @@ fn parse_file(path: String) -> Result<Vec<SiEventParsed>, String> {
         .filter(|n| n.has_tag_name("siEvent"))
         .collect();
 
-    let mut parsed = parse_si_events(&contents, si_events);
-    parsed = analyze_si_events(parsed);
+    let parsed = parse_si_events(&contents, si_events)?;
 
-    Ok(parsed)
+    Ok(analyze_si_events(parsed))
 }
 
 pub fn analyze_si_events(mut events: Vec<SiEventParsed>) -> Vec<SiEventParsed> {
@@ -48,58 +151,6 @@ pub fn analyze_si_events(mut events: Vec<SiEventParsed>) -> Vec<SiEventParsed> {
     events
 }
 
-pub fn parse_si_events(
-    contents: &String,
-    si_events: Vec<roxmltree::Node<'_, '_>>,
-) -> Vec<SiEventParsed> {
-    si_events
-        .iter()
-        .map(|node| {
-            let xml_string = String::from(&contents[node.range()]);
-            let event_id = node.attribute("eventId").unwrap().to_string();
-            let title = node.attribute("title").unwrap().to_string();
-
-            let duration: i64 =
-                a_duration_from_string(node.attribute("duration").unwrap().to_string());
-            let start_time = a_starttime_from_str(node.attribute("startTime").unwrap().to_string());
-            let end_time = calculate_endtime(duration, start_time);
-            let mut displayed_start: Option<DateTime<chrono::Utc>> = None;
-            let mut displayed_end: Option<DateTime<chrono::Utc>> = None;
-
-            for child in node.descendants().filter(|c| c.has_tag_name("siStandard")) {
-                let d = a_duration_from_string(
-                    child.attribute("displayedDuration").unwrap().to_string(),
-                );
-                let s =
-                    a_starttime_from_str(child.attribute("displayedStart").unwrap().to_string());
-                let e = calculate_endtime(d, s);
-                displayed_end = Some(e);
-                displayed_start = Some(s);
-            }
-
-            let error_front = None;
-            let error_back = None;
-            let has_error = false;
-
-            SiEventParsed {
-                event_id,
-                title,
-
-                start_time,
-                end_time,
-                displayed_start,
-                displayed_end,
-
-                error_front,
-                error_back,
-                has_error,
-
-                xml_string,
-            }
-        })
-        .collect()
-}
-
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum TimeErrorType {
@@ -115,47 +166,14 @@ pub struct SiEventParsed {
 
     pub start_time: DateTime<Utc>,
     pub end_time: DateTime<Utc>,
-    pub displayed_start: Option<DateTime<Utc>>,
-    pub displayed_end: Option<DateTime<Utc>>,
+    pub displayed_start: DateTime<Utc>,
+    pub displayed_end: DateTime<Utc>,
 
     pub error_front: Option<TimeErrorType>,
     pub error_back: Option<TimeErrorType>,
     pub has_error: bool,
 
     pub xml_string: String,
-}
-
-pub fn a_duration_from_string(string: String) -> i64 {
-    let fmt = "00 %H:%M:%S%.3f";
-    let step = NaiveTime::parse_from_str("00 00:00:00.000", "00 %H:%M:%S%.3f").unwrap();
-    let naivetime = NaiveTime::parse_from_str(&string, fmt);
-    match naivetime {
-        Ok(time) => {
-            let dur: Duration = time - step;
-            dur.num_milliseconds()
-        }
-        Err(..) => 0,
-    }
-}
-
-pub fn calculate_endtime(duration: i64, start_time: DateTime<Utc>) -> DateTime<Utc> {
-    let duration: Duration = match chrono::TimeDelta::try_milliseconds(duration) {
-        Some(duration) => duration,
-        None => Duration::new(0, 0).unwrap(),
-    };
-
-    start_time + duration
-}
-
-pub fn a_starttime_from_str(string: String) -> DateTime<Utc> {
-    let dt = NaiveDateTime::parse_from_str(&string, "%Y-%m-%dT%H:%M:%S%.3fZ");
-    match dt {
-        Ok(dtt) => {
-            let dt2: LocalResult<DateTime<Utc>> = Utc.from_local_datetime(&dtt);
-            dt2.unwrap()
-        }
-        Err(..) => Utc::now(),
-    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
