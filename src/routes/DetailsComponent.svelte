@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formatTime } from './helper';
+	import { formatTime, highlightXml } from './helper';
 	let { event } = $props();
 </script>
 
@@ -14,9 +14,7 @@
 	</div>
 
 	<h3>XML Source</h3>
-	<pre class="language-xml xml-container">
-    <code class="language-xml">{event.xmlString}</code>
-</pre>
+	<pre class="xml-container"><code>{@html highlightXml(event.xmlString)}</code></pre>
 </div>
 
 <style>
@@ -61,5 +59,36 @@
 		margin: 0;
 		white-space: pre-wrap;
 		word-break: break-all;
+	}
+
+	.xml-container {
+		background: #1e293b;
+		padding: 12px;
+		border-radius: 6px;
+		font-family: 'Courier New', Courier, monospace;
+		font-size: 11px;
+		line-height: 1.4;
+		white-space: pre;
+		overflow-x: auto;
+		text-align: left;
+		margin: 0;
+	}
+
+	:global(.xml-tag) {
+		color: #f43f5e;
+		font-weight: bold;
+	}
+
+	:global(.xml-attr) {
+		color: #38bdf8;
+	}
+
+	:global(.xml-string) {
+		color: #facc15;
+	}
+
+	:global(.xml-comment) {
+		color: #64748b;
+		font-style: italic;
 	}
 </style>
