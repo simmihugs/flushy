@@ -126,26 +126,6 @@
 		overflow: hidden;
 	}
 
-	/* .theme-switch { */
-	/* 	position: absolute; */
-	/* 	top: 15px; */
-	/* 	right: 15px; */
-	/* 	z-index: 1000; */
-	/* 	cursor: pointer; */
-	/* 	padding: 8px 12px; */
-	/* 	border-radius: 8px; */
-
-	/* 	cursor: pointer; */
-	/* 	background: var(--theme-switch-background); */
-	/* 	color: var(--theme-switch-color); */
-	/* 	border: 1px solid transparent; */
-	/* 	transition: var(--theme-switch-border) 0.25s; */
-	/* 	box-shadow: 0 1px 1px var(--theme-switch-border); */
-	/* } */
-
-	/* .theme-switch:hover { */
-	/* 	border: var(--theme-switch-border-hover); */
-	/* } */
 	.theme-switch {
 		position: absolute;
 		top: 15px;
@@ -158,7 +138,6 @@
 		background: var(--theme-switch-background);
 		color: var(--theme-switch-color);
 
-		/* Festen Rahmen definieren und nur die border-color animieren: */
 		border: 1px solid var(--theme-switch-border);
 		transition:
 			border-color 0.25s ease,
@@ -179,21 +158,10 @@
 		overflow: hidden;
 	}
 
-	/* .sidebar { */
-	/* 	flex: 0 0 300px; */
-	/* } */
-
 	.empty-state {
 		justify-content: center;
 		align-items: center;
 	}
-
-	/* .sidebar.centered { */
-	/* 	width: 100%; */
-	/* 	display: flex; */
-	/* 	justify-content: center; */
-	/* 	align-items: center; */
-	/* } */
 
 	.active-state {
 		flex-direction: row;
@@ -204,29 +172,6 @@
 		flex: 1;
 		min-width: 0;
 	}
-
-	/* .cool { */
-	/* 	border: 2px solid red; */
-	/* 	flex: 1; */
-	/* 	min-width: 0; */
-	/* 	display: flex; */
-	/* } */
-
-	/* .sidebar.centered { */
-	/* 	width: 100%; */
-	/* 	display: flex; */
-	/* 	justify-content: center; */
-	/* 	align-items: center; */
-	/* } */
-
-	/* .sidebar.expanded { */
-	/* 	width: 300px; */
-	/* 	flex-shrink: 0; */
-	/* 	border-right: 1px solid #ccc; */
-	/* 	display: flex; */
-	/* 	flex-direction: column; */
-	/* 	justify-content: space-between; */
-	/* } */
 
 	.file-view-container {
 		display: flex;
@@ -249,7 +194,6 @@
 		--link-hover: #535bf2;
 		--details-card-color: #000000;
 
-		/* event-card */
 		--event-card-background: #f8fafc;
 		--event-card-border: #e2e8f0;
 		--event-card-background-hover: #f1f5f9;
@@ -266,7 +210,6 @@
 		--event-card-error-badge-color: #dc2626;
 		--event-card-bottom: #475569;
 
-		/* collapsed cards */
 		--collapsed-card-background: #ffffff;
 		--collapsed-card-border: #e2e8f0;
 		--collapsed-card-color: #475569;
@@ -313,14 +256,4 @@
 			background-color 0.3s,
 			color 0.3s;
 	}
-
-	/* input, */
-	/* button { */
-	/* 	color: var(--input-text); */
-	/* 	background-color: var(--input-bg); */
-	/* } */
-
-	/* a:hover { */
-	/* 	color: var(--link-hover); */
-	/* } */
 </style>

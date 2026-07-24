@@ -184,19 +184,4 @@
 		padding: 20px;
 		color: #666;
 	}
-	/* .dark .switch-container { */
-	/* 	color: #94a3b8; */
-	/* } */
-
-	/* .dark .switch-slider { */
-	/* 	background-color: #475569; */
-	/* } */
-
-	/* .dark .switch-container input:checked + .switch-slider { */
-	/* 	background-color: #24c8db; */
-	/* } */
-
-	/* .dark .empty-state { */
-	/* 	color: #aaa; */
-	/* } */
 </style>

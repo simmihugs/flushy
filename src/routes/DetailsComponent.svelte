@@ -62,8 +62,4 @@
 		white-space: pre-wrap;
 		word-break: break-all;
 	}
-
-	/* .error { */
-	/* 	color: #f87171; */
-	/* } */
 </style>
