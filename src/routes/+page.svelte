@@ -6,6 +6,7 @@
 	import { open } from '@tauri-apps/plugin-dialog';
 	import FileView from './FileView.svelte';
 	import Sidebar from './Sidebar.svelte';
+	import HeaderBar from './HeaderBar.svelte';
 
 	let showCollapsed = $state(true);
 	let theme = $state({ value: false, name: 'light' });
@@ -17,7 +18,6 @@
 		theme = { value: isDark, name: themeName };
 		document.documentElement.setAttribute('data-theme', themeName);
 		localStorage.setItem('theme', themeName);
-		console.log(theme);
 	}
 
 	function toggleTheme() {
@@ -93,14 +93,17 @@
 	});
 </script>
 
-<main class="layout {files.length === 0 ? 'empty-state' : 'active-state'}">
-	<button class="theme-switch" onclick={toggleTheme}>{getTheme()}</button>
-	<Sidebar {files} bind:activeFile onFileSelect={chooseFile} isExpanded={files.length > 0} />
-	{#if files.length > 0}
-		<div class="file-view-container">
-			<FileView {showCollapsed} {activeFile} />
-		</div>
-	{/if}
+<main class="layout">
+	<HeaderBar {files} {toggleTheme} {getTheme} bind:showCollapsed />
+
+	<div class="content-body {files.length === 0 ? 'empty-state' : ''}">
+		<Sidebar {files} bind:activeFile onFileSelect={chooseFile} isExpanded={files.length > 0} />
+		{#if files.length > 0}
+			<div class="file-view-container">
+				<FileView {showCollapsed} {activeFile} />
+			</div>
+		{/if}
+	</div>
 </main>
 
 <style>
@@ -126,45 +129,32 @@
 		overflow: hidden;
 	}
 
-	.theme-switch {
-		position: absolute;
-		top: 15px;
-		right: 15px;
-		z-index: 1000;
-		cursor: pointer;
-		padding: 8px 12px;
-		border-radius: 8px;
-
-		background: var(--theme-switch-background);
-		color: var(--theme-switch-color);
-
-		border: 1px solid var(--theme-switch-border);
-		transition:
-			border-color 0.25s ease,
-			background-color 0.25s ease;
-
-		box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
-	}
-
-	.theme-switch:hover {
-		border-color: var(--theme-switch-border-hover);
-	}
-
 	.layout {
 		display: flex;
+		flex-direction: column;
 		height: 100vh;
 		width: 100vw;
 		margin: 0;
 		overflow: hidden;
 	}
+	.content-body {
+		display: flex;
+		flex: 1;
+		min-height: 0;
+		width: 100%;
+		overflow: hidden;
+	}
+	.file-view-container {
+		display: flex;
+		flex-direction: row;
+		flex-grow: 1;
+		min-width: 0;
+		overflow-x: auto;
+	}
 
 	.empty-state {
 		justify-content: center;
 		align-items: center;
-	}
-
-	.active-state {
-		flex-direction: row;
 	}
 
 	.file-view-container {
@@ -186,6 +176,11 @@
 		--theme-switch-border: #0f0f0f;
 		--theme-switch-color: #0f0f0f;
 		--theme-switch-border-hover: #396cd8;
+
+		--theme-filter-background: #f6f6f6;
+		--theme-filter-border: #0f0f0f;
+		--theme-filter-color: #0f0f0f;
+		--theme-filter-border-hover: #396cd8;
 
 		--bg-color: #f6f6f6;
 		--text-color: #0f0f0f;
@@ -220,6 +215,11 @@
 		--theme-switch-border: #f6f6f6;
 		--theme-switch-color: #f6f6f6;
 		--theme-switch-border-hover: #396cd8;
+
+		--theme-filter-background: #2f2f2f;
+		--theme-filter-border: #f6f6f6;
+		--theme-filter-color: #f6f6f6;
+		--theme-filter-border-hover: #396cd8;
 
 		--bg-color: #2f2f2f;
 		--text-color: #f6f6f6;

@@ -1,41 +1,67 @@
 <script lang="ts">
-	import { formatTime } from './helper';
+	import { formatTime, formatMilliseconds } from './helper';
 	let { event, active = false, onSelect } = $props();
+
+	function explainError(e: any) {
+		if (e.gap) {
+			return 'Gap';
+		} else {
+			return 'Overlap';
+		}
+	}
+
+	function showError(e: any) {
+		if (e.gap) {
+			return formatMilliseconds(e.gap);
+		} else {
+			return formatMilliseconds(e.overlap);
+		}
+	}
 </script>
 
-<div
-	class="event-card"
-	class:active
-	class:has-error={event.hasError}
-	onclick={onSelect}
-	role="button"
-	tabindex="0"
->
-	<div class="error-indicators">
-		{#if event.errorFront}
-			<span class="error-badge front">⚠️ Front Error: {event.errorFront}</span>
-		{/if}
-	</div>
+<span>
+	<div
+		class="event-card"
+		class:active
+		class:has-error={event.hasError}
+		onclick={onSelect}
+		role="button"
+		tabindex="0"
+	>
+		<div class="error-indicators">
+			{#if event.errorFront}
+				<span class="error-badge front">⚠️ Front Error: {event.errorFront}</span>
+			{/if}
+		</div>
 
-	<div class="card-top">
-		<span class="event-id">{event.eventId}</span>
-	</div>
+		<div class="card-top">
+			<span class="event-id">{event.eventId}</span>
+		</div>
 
-	<h3 class="event-title">{event.title}</h3>
+		<h3 class="event-title">{event.title}</h3>
 
-	<div class="card-bottom">
-		<span class="time">
-			{formatTime(event.startTime)} - {formatTime(event.endTime)}
-		</span>
+		<div class="card-bottom">
+			<span class="time">
+				{formatTime(event.startTime)} - {formatTime(event.endTime)}
+			</span>
+		</div>
+		<div class="error-indicators">
+			{#if event.errorBack}
+				<span class="error-badge back">⚠️ Back Error: {explainError(event.errorBack)}</span>
+			{/if}
+		</div>
 	</div>
-	<div class="error-indicators">
+	<div class="indent">
 		{#if event.errorBack}
-			<span class="error-badge back">⚠️ Back Error: {event.errorBack}</span>
+			<span class="error-badge back">{showError(event.errorBack)}</span>
 		{/if}
 	</div>
-</div>
+</span>
 
 <style>
+	.indent {
+		padding-left: 25px;
+	}
 	.event-card {
 		background: var(--event-card-background);
 		border: 1px solid var(--event-card-border);
@@ -73,6 +99,12 @@
 	.event-card.has-error:hover {
 		background: var(--event-card-background-has-error-hover);
 		border-color: var(--event-card-border-has-error-hover);
+	}
+
+	.event-card.has-error.active {
+		background: var(--event-card-background-has-error);
+		border: 2px solid var(--event-card-border-active);
+		box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
 	}
 
 	.card-top {
