@@ -3,7 +3,14 @@
 	let { event, active = false, onSelect } = $props();
 </script>
 
-<div class="event-card" class:active class:has-error={event.hasError} onclick={onSelect}>
+<div
+	class="event-card"
+	class:active
+	class:has-error={event.hasError}
+	onclick={onSelect}
+	role="button"
+	tabindex="0"
+>
 	<div class="error-indicators">
 		{#if event.errorFront}
 			<span class="error-badge front">⚠️ Front Error: {event.errorFront}</span>

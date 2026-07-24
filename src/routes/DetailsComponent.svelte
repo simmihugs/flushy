@@ -1,7 +1,4 @@
 <script lang="ts">
-	// import Prism from 'prismjs';
-	import 'prismjs/components/prism-markup';
-	import 'prismjs/themes/prism-tomorrow.css';
 	import { formatTime } from './helper';
 	let { event } = $props();
 </script>

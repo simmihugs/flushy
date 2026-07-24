@@ -126,16 +126,51 @@
 		overflow: hidden;
 	}
 
+	/* .theme-switch { */
+	/* 	position: absolute; */
+	/* 	top: 15px; */
+	/* 	right: 15px; */
+	/* 	z-index: 1000; */
+	/* 	cursor: pointer; */
+	/* 	padding: 8px 12px; */
+	/* 	border-radius: 8px; */
+
+	/* 	cursor: pointer; */
+	/* 	background: var(--theme-switch-background); */
+	/* 	color: var(--theme-switch-color); */
+	/* 	border: 1px solid transparent; */
+	/* 	transition: var(--theme-switch-border) 0.25s; */
+	/* 	box-shadow: 0 1px 1px var(--theme-switch-border); */
+	/* } */
+
+	/* .theme-switch:hover { */
+	/* 	border: var(--theme-switch-border-hover); */
+	/* } */
 	.theme-switch {
 		position: absolute;
 		top: 15px;
 		right: 15px;
 		z-index: 1000;
 		cursor: pointer;
-		border: 1px solid rgba(0, 0, 0, 0.1);
 		padding: 8px 12px;
 		border-radius: 8px;
+
+		background: var(--theme-switch-background);
+		color: var(--theme-switch-color);
+
+		/* Festen Rahmen definieren und nur die border-color animieren: */
+		border: 1px solid var(--theme-switch-border);
+		transition:
+			border-color 0.25s ease,
+			background-color 0.25s ease;
+
+		box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
 	}
+
+	.theme-switch:hover {
+		border-color: var(--theme-switch-border-hover);
+	}
+
 	.layout {
 		display: flex;
 		height: 100vh;
@@ -202,6 +237,11 @@
 
 	:root,
 	:global([data-theme='light']) {
+		--theme-switch-background: #f6f6f6;
+		--theme-switch-border: #0f0f0f;
+		--theme-switch-color: #0f0f0f;
+		--theme-switch-border-hover: #396cd8;
+
 		--bg-color: #f6f6f6;
 		--text-color: #0f0f0f;
 		--input-bg: #ffffff;
@@ -233,6 +273,11 @@
 	}
 
 	:global([data-theme='dark']) {
+		--theme-switch-background: #2f2f2f;
+		--theme-switch-border: #f6f6f6;
+		--theme-switch-color: #f6f6f6;
+		--theme-switch-border-hover: #396cd8;
+
 		--bg-color: #2f2f2f;
 		--text-color: #f6f6f6;
 		--input-bg: #1e1e1e;
