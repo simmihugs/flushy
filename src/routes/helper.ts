@@ -1,3 +1,16 @@
+export function sendeTag(timeVal: string) {
+	if (!timeVal) return '';
+	const date = new Date(timeVal);
+
+	return isNaN(date.getTime())
+		? String(timeVal)
+		: date.toLocaleDateString('de-DE', {
+				day: '2-digit',
+				month: '2-digit',
+				year: 'numeric'
+			});
+}
+
 export function formatTime(timeVal: string) {
 	if (!timeVal) return '';
 	const date = new Date(timeVal);

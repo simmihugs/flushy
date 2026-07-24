@@ -196,7 +196,7 @@
 		--event-card-background-active: #eff6ff;
 		--event-card-border-active: #3b82f6;
 		--event-card-background-has-error: #fef2f2;
-		--event-card-border-has-error: : #f87171;
+		--event-card-border-has-error: #f87171;
 		--event-card-background-has-error-hover: #f87171 !important;
 		--event-card-border-has-error: #ed4747 !important;
 		--event-card-top: #64748b;
@@ -236,13 +236,13 @@
 		--event-card-border-active: #3b82f6;
 		--event-card-background-has-error: #451a1a;
 		--event-card-border-has-error: #7f1d1d;
-		--event-card-background-has-error-hover: #5c1d1d;
-		--event-card-border-has-error-hover: #991b1b;
+		--event-card-background-has-error-hover: #5c1d1d !important;
+		--event-card-border-has-error-hover: #991b1b !important;
 		--event-card-top: #94a3b8;
 		--event-card-title: #f8fafc;
 		--event-card-error-badge-background: #7f1d1d;
 		--event-card-error-badge-color: #fca5a5;
-		--event-card-card-bottom: #cbd5e1;
+		--event-card-bottom: #cbd5e1;
 
 		--collapsed-card-background: #1e293b;
 		--collapsed-card-border: #334155;

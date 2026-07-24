@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formatTime, formatMilliseconds } from './helper';
+	import { formatTime, formatMilliseconds, sendeTag } from './helper';
 	let { event, active = false, onSelect } = $props();
 
 	function explainError(e: any) {
@@ -41,6 +41,9 @@
 		<h3 class="event-title">{event.title}</h3>
 
 		<div class="card-bottom">
+			<span class="time">
+				Sendetag {sendeTag(event.startTime)}
+			</span>
 			<span class="time">
 				{formatTime(event.startTime)} - {formatTime(event.endTime)}
 			</span>
@@ -132,6 +135,8 @@
 	.card-bottom {
 		font-size: 12px;
 		color: var(--event-card-bottom);
+		display: flex;
+		flex-direction: column;
 	}
 
 	.error-indicators {
