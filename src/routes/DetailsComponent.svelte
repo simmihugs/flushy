@@ -14,7 +14,15 @@
 	</div>
 
 	<h3>XML Source</h3>
-	<pre class="xml-container"><code>{@html highlightXml(event.xmlString)}</code></pre>
+	<pre class="xml-container"><code
+			>{#await highlightXml(event.xmlString)}
+				Formatting...
+			{:then highlighted}
+				{@html highlighted}
+			{:catch error}
+				Formatierungsfehler
+			{/await}</code
+		></pre>
 </div>
 
 <style>
@@ -32,59 +40,36 @@
 	}
 
 	.xml-container {
-		background: #1e293b;
-		padding: 5px;
-		border-radius: 5px;
-		overflow-x: auto;
-		font-family: 'Courier New', Courier, monospace;
-		font-size: 0.1em;
-	}
-	.xml-container {
-		background: #1e293b;
-		padding: 10px;
-		border-radius: 5px;
-		overflow-x: auto;
-		font-family: 'Courier New', Courier, monospace;
-		font-size: 10px !important;
-		line-height: 1.2;
-	}
-
-	pre {
-		margin: 0;
-		white-space: pre-wrap;
-		word-break: break-all;
-	}
-
-	pre {
-		margin: 0;
-		white-space: pre-wrap;
-		word-break: break-all;
-	}
-
-	.xml-container {
-		background: #1e293b;
+		background-color: var(--xml-container-background);
 		padding: 12px;
 		border-radius: 6px;
 		font-family: 'Courier New', Courier, monospace;
-		font-size: 11px;
-		line-height: 1.4;
+		font-size: 10px !important;
+		line-height: 1.2;
+		margin: 0;
+		text-align: left;
+		box-sizing: border-box;
+
 		white-space: pre;
 		overflow-x: auto;
-		text-align: left;
-		margin: 0;
+	}
+
+	:global(.xml-bracket) {
+		color: var(--xml-bracket);
+		font-weight: normal;
 	}
 
 	:global(.xml-tag) {
-		color: #f43f5e;
+		color: var(--xml-tag);
 		font-weight: bold;
 	}
 
 	:global(.xml-attr) {
-		color: #38bdf8;
+		color: var(--xml-attr);
 	}
 
 	:global(.xml-string) {
-		color: #facc15;
+		color: var(--xml-string);
 	}
 
 	:global(.xml-comment) {

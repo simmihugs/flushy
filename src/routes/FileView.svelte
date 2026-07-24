@@ -67,36 +67,34 @@
 	}
 </script>
 
-<div>
-	<div class="fileview">
-		<div class="event-list" onscroll={handleScroll}>
-			{#each groupedEvents as item}
-				{#if item.type === 'error'}
-					<Event
-						event={item.data}
-						active={selectedEvent?.eventId === item.data.eventId}
-						onSelect={() => toggleSelection(item.data)}
-					/>
-				{:else if item.type === 'ok-flat'}
-					<Event
-						event={item.data}
-						active={selectedEvent?.eventId === item.data.eventId}
-						onSelect={() => toggleSelection(item.data)}
-					/>
-				{:else}
-					<CollapsedCard {item} />
-				{/if}
+<div class="fileview">
+	<div class="event-list" onscroll={handleScroll}>
+		{#each groupedEvents as item}
+			{#if item.type === 'error'}
+				<Event
+					event={item.data}
+					active={selectedEvent?.eventId === item.data.eventId}
+					onSelect={() => toggleSelection(item.data)}
+				/>
+			{:else if item.type === 'ok-flat'}
+				<Event
+					event={item.data}
+					active={selectedEvent?.eventId === item.data.eventId}
+					onSelect={() => toggleSelection(item.data)}
+				/>
 			{:else}
-				<div class="empty-state">
-					<p>Es wurden noch keine XML-Events geladen.</p>
-				</div>
-			{/each}
-		</div>
-		<div class="details">
-			{#if selectedEvent}
-				<DetailsComponent event={selectedEvent} />
+				<CollapsedCard {item} />
 			{/if}
-		</div>
+		{:else}
+			<div class="empty-state">
+				<p>Es wurden noch keine XML-Events geladen.</p>
+			</div>
+		{/each}
+	</div>
+	<div class="details">
+		{#if selectedEvent}
+			<DetailsComponent event={selectedEvent} />
+		{/if}
 	</div>
 </div>
 
@@ -104,14 +102,17 @@
 	.fileview {
 		display: flex;
 		flex: 1;
+		width: 100%;
+		height: 100%;
+		min-width: 0;
+		overflow: hidden;
 	}
-
 	.event-list {
 		flex: 1;
-		min-width: 0;
+		min-width: 400px;
 		overflow-y: auto;
-		width: 60vw;
 		padding: 8px 12px;
+		box-sizing: border-box;
 	}
 
 	.details {

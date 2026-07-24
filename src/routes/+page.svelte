@@ -221,6 +221,12 @@
 		--collapsed-card-background: #ffffff;
 		--collapsed-card-border: #e2e8f0;
 		--collapsed-card-color: #475569;
+
+		--xml-container-background: #b5b5b3;
+		--xml-bracket: black;
+		--xml-tag: #910085;
+		--xml-attr: #0743b3;
+		--xml-string: green;
 	}
 
 	:global([data-theme='dark']) {
@@ -260,6 +266,12 @@
 		--collapsed-card-background: #1e293b;
 		--collapsed-card-border: #334155;
 		--collapsed-card-color: #f8fafc;
+
+		--xml-container-background: #616161;
+		--xml-bracket: #94a3b8;
+		--xml-tag: #f43f5e;
+		--xml-attr: #38bdf8;
+		--xml-string: #facc15;
 	}
 
 	:global(body) {
