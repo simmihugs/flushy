@@ -30,7 +30,7 @@
 	>
 		<div class="error-indicators">
 			{#if event.errorFront}
-				<span class="error-badge front">⚠️ Front Error: {event.errorFront}</span>
+				<span class="error-badge front">⚠️ Front Error: {explainError(event.errorFront)}</span>
 			{/if}
 		</div>
 

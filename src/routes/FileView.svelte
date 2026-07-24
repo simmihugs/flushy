@@ -116,8 +116,7 @@
 	}
 
 	.details {
-		min-width: 300px;
-		max-width: 500px;
+		max-width: 400px;
 	}
 
 	.empty-state {
