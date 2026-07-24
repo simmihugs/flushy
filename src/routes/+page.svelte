@@ -13,6 +13,13 @@
 	let files = $state<MyFile[]>([]);
 	let activeFile = $state<MyFile | null>(null);
 
+	function deleteFile(filePath: string) {
+		files = files.filter((f) => f.path !== filePath);
+		if (activeFile?.path === filePath) {
+			activeFile = files.length > 0 ? files[files.length - 1] : null;
+		}
+	}
+
 	function applyTheme(isDark: boolean) {
 		const themeName = isDark ? 'dark' : 'light';
 		theme = { value: isDark, name: themeName };
@@ -97,7 +104,13 @@
 	<HeaderBar {files} {toggleTheme} {getTheme} bind:showCollapsed />
 
 	<div class="content-body {files.length === 0 ? 'empty-state' : ''}">
-		<Sidebar {files} bind:activeFile onFileSelect={chooseFile} isExpanded={files.length > 0} />
+		<Sidebar
+			{files}
+			bind:activeFile
+			onFileSelect={chooseFile}
+			isExpanded={files.length > 0}
+			onFileDelete={deleteFile}
+		/>
 		{#if files.length > 0}
 			<div class="file-view-container">
 				<FileView {showCollapsed} {activeFile} />
