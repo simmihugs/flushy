@@ -1,22 +1,6 @@
 <script lang="ts">
-	import Prism from 'prismjs';
-	import 'prismjs/components/prism-markup';
-	import 'prismjs/themes/prism-tomorrow.css';
-	import { formatTime } from './helper';
+	import { formatTime, highlightXml } from './helper';
 	let { event } = $props();
-
-	//let highlightedCode = $derived.by(() => {
-	//	console.log(event.xmlString);
-	//	if (!event || !event.xmlSource) {
-	//		return '';
-	//	}
-	//	try {
-	//		return Prism.highlight(event.xmlString, Prism.languages.xml, 'xml');
-	//	} catch (e) {
-	//		console.error('Highlighting fehlgeschlagen', e);
-	//		return event.xmlString;
-	//	}
-	//});
 </script>
 
 <div class="details-card">
@@ -30,20 +14,13 @@
 	</div>
 
 	<h3>XML Source</h3>
-	<!-- <pre class="language-xml"> -->
-	<!--   <code class="language-xml" -->
-	<!-- 		>{@html highlightedCode} -->
-	<!-- 	</code> -->
-	<!-- </pre> -->
-	<pre class="language-xml xml-container">
-    <code class="language-xml">{event.xmlString}</code>
-</pre>
+	<pre class="xml-container"><code>{@html highlightXml(event.xmlString)}</code></pre>
 </div>
 
 <style>
 	.details-card {
 		padding: 5px;
-		color: #e2e8f0;
+		color: var(--details-card-color);
 		height: 100%;
 		overflow-y: auto;
 	}
@@ -68,7 +45,6 @@
 		border-radius: 5px;
 		overflow-x: auto;
 		font-family: 'Courier New', Courier, monospace;
-		/* !important erzwingt die Größe gegen Browser-Defaults */
 		font-size: 10px !important;
 		line-height: 1.2;
 	}
@@ -85,7 +61,34 @@
 		word-break: break-all;
 	}
 
-	.error {
-		color: #f87171;
+	.xml-container {
+		background: #1e293b;
+		padding: 12px;
+		border-radius: 6px;
+		font-family: 'Courier New', Courier, monospace;
+		font-size: 11px;
+		line-height: 1.4;
+		white-space: pre;
+		overflow-x: auto;
+		text-align: left;
+		margin: 0;
+	}
+
+	:global(.xml-tag) {
+		color: #f43f5e;
+		font-weight: bold;
+	}
+
+	:global(.xml-attr) {
+		color: #38bdf8;
+	}
+
+	:global(.xml-string) {
+		color: #facc15;
+	}
+
+	:global(.xml-comment) {
+		color: #64748b;
+		font-style: italic;
 	}
 </style>

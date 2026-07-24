@@ -18,15 +18,15 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		background: #ffffff;
-		border: 1px solid #e2e8f0;
+		background: var(--collapsed-card-background);
+		border: 1px solid var(--collapsed-card-border);
 		border-radius: 8px;
 		padding: 10px 20px;
 		margin: 8px auto;
 		width: 80%;
 		max-width: 600px;
 		font-size: 13px;
-		color: #475569;
+		color: var(--collapsed-card-color);
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 	}
 

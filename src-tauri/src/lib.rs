@@ -135,11 +135,11 @@ pub fn analyze_si_events(mut events: Vec<SiEventParsed>) -> Vec<SiEventParsed> {
         let diff = (start_next - end_current).num_milliseconds();
 
         if diff > 0 {
-            events[i].error_back = Some(TimeErrorType::Gap);
-            events[i + 1].error_front = Some(TimeErrorType::Gap);
+            events[i].error_back = Some(TimeErrorType::Gap(diff));
+            events[i + 1].error_front = Some(TimeErrorType::Gap(diff));
         } else if diff < 0 {
-            events[i].error_back = Some(TimeErrorType::Overlap);
-            events[i + 1].error_front = Some(TimeErrorType::Overlap);
+            events[i].error_back = Some(TimeErrorType::Overlap(diff));
+            events[i + 1].error_front = Some(TimeErrorType::Overlap(diff));
         }
     }
 
@@ -153,8 +153,8 @@ pub fn analyze_si_events(mut events: Vec<SiEventParsed>) -> Vec<SiEventParsed> {
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum TimeErrorType {
-    Gap,
-    Overlap,
+    Gap(i64),
+    Overlap(i64),
 }
 
 #[derive(Serialize, Debug, Clone)]

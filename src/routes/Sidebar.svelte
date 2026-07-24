@@ -1,14 +1,27 @@
 <script lang="ts">
-	let { files, activeFile = $bindable(), onFileSelect, isExpanded } = $props();
+	let { files, activeFile = $bindable(), onFileSelect, isExpanded, onFileDelete } = $props();
 </script>
 
 <aside class="sidebar {isExpanded ? 'expanded' : 'centered'}">
 	{#if isExpanded}
 		<div class="file-list">
 			{#each files as file}
-				<button class:active={activeFile?.path === file.path} onclick={() => (activeFile = file)}>
-					{file.name}
-				</button>
+				<div class="file-item" class:active={activeFile?.path === file.path}>
+					<button class="file-select-btn" onclick={() => (activeFile = file)} title={file.name}>
+						<span class="file-name">{file.name}</span>
+					</button>
+
+					<button
+						class="delete-btn"
+						onclick={(e) => {
+							e.stopPropagation();
+							onFileDelete(file.path);
+						}}
+						title="Datei entfernen"
+					>
+						🗑️
+					</button>
+				</div>
 			{/each}
 		</div>
 	{/if}
@@ -55,33 +68,12 @@
 		border-color: #396cd8;
 	}
 
-	button.active {
-		border-color: #396cd8;
-		background-color: #4b8efa;
-	}
-
 	.drop-container {
 		display: flex;
 		justify-content: center;
 		margin: 20px 0;
 	}
 
-	.dropzone {
-		width: 400px;
-		max-width: 500px;
-		padding: 30px;
-		border: 2px dashed #396cd8;
-		border-radius: 12px;
-		background-color: #ffffff;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 10px;
-		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-		transition:
-			background-color 0.2s,
-			border-color 0.2s;
-	}
 	.sidebar.expanded .dropzone {
 		width: 80%;
 	}
@@ -90,23 +82,6 @@
 		font-size: 0.9em;
 		color: #666;
 		font-style: italic;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		button {
-			color: #ffffff;
-			background-color: #0f0f0f98;
-		}
-		button:active {
-			background-color: #0f0f0f69;
-		}
-		.dropzone {
-			background-color: #1e1e1e;
-			border-color: #24c8db;
-		}
-		.or-separator {
-			color: #aaa;
-		}
 	}
 
 	.sidebar {
@@ -130,7 +105,7 @@
 	.drop-container {
 		flex-shrink: 0;
 		padding-top: 10px;
-		border-top: 1px solid #333;
+		padding-bottom: 25px;
 	}
 
 	.dropzone {
@@ -138,10 +113,127 @@
 		padding: 20px;
 		border: 2px dashed #396cd8;
 		border-radius: 12px;
+		background-color: var(--input-bg);
+		color: var(--text-color);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 10px;
 		box-sizing: border-box;
+		transition:
+			background-color 0.3s,
+			color 0.3s;
+	}
+
+	.file-item {
+		display: flex;
+		align-items: center;
+		background-color: var(--input-bg, #ffffff);
+		border: 1px solid transparent;
+		border-radius: 8px;
+		overflow: hidden;
+		box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+		transition: border-color 0.25s;
+	}
+
+	.file-item:hover {
+		border-color: #396cd8;
+	}
+
+	.file-item.active {
+		border-color: #396cd8;
+	}
+
+	.file-select-btn {
+		flex: 1;
+		background: none;
+		border: none;
+		box-shadow: none;
+		text-align: left;
+		padding: 0.6em 0.8em;
+		border-radius: 0;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.file-name {
+		color: inherit;
+	}
+
+	.delete-btn {
+		background: none;
+		border: none;
+		box-shadow: none;
+		padding: 0.6em 0.8em;
+		cursor: pointer;
+		opacity: 0.6;
+		transition:
+			opacity 0.2s,
+			transform 0.1s;
+		border-radius: 0;
+	}
+
+	.delete-btn:hover {
+		opacity: 1;
+		transform: scale(1.1);
+	}
+
+	.file-item {
+		display: flex;
+		align-items: center;
+		background-color: var(--input-bg, #ffffff);
+		color: var(--text-color, #0f0f0f);
+		border: 1px solid var(--event-card-border, #e2e8f0);
+		border-radius: 8px;
+		overflow: hidden;
+		transition: all 0.2s ease;
+	}
+
+	.file-item:hover {
+		border-color: #396cd8;
+	}
+
+	.file-item.active {
+		border-color: #4073c9;
+		color: #396cd8;
+	}
+
+	.file-select-btn {
+		flex: 1;
+		background: transparent;
+		border: none;
+		color: inherit;
+		text-align: left;
+		padding: 0.6em 0.8em;
+		font-size: 0.9em;
+		cursor: pointer;
+
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.delete-btn {
+		background: transparent;
+		border: none;
+		padding: 0.6em 0.8em;
+		cursor: pointer;
+		font-size: 1.1em;
+
+		opacity: 0.7;
+		filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.5));
+		transition:
+			opacity 0.2s,
+			transform 0.1s;
+	}
+
+	.file-item.active .delete-btn {
+		opacity: 0.9;
+	}
+
+	.delete-btn:hover {
+		opacity: 1 !important;
+		transform: scale(1.15);
 	}
 </style>

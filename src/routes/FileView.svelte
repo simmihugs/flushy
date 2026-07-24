@@ -68,16 +68,6 @@
 </script>
 
 <div>
-	{#if groupedEvents.length > 0}
-		<div class="filter-area">
-			<label class="switch-container">
-				<input type="checkbox" bind:checked={showCollapsed} />
-				<span class="switch-slider"></span>
-				<span class="switch-label">Fehlerfreie Blöcke zusammenfassen</span>
-			</label>
-		</div>
-	{/if}
-
 	<div class="fileview">
 		<div class="event-list" onscroll={handleScroll}>
 			{#each groupedEvents as item}
@@ -121,6 +111,7 @@
 		min-width: 0;
 		overflow-y: auto;
 		width: 60vw;
+		padding: 8px 12px;
 	}
 
 	.details {
@@ -128,72 +119,9 @@
 		max-width: 500px;
 	}
 
-	.filter-area {
-		display: flex;
-		justify-content: center;
-		padding: 10px 0;
-		margin-bottom: 15px;
-	}
-
-	.switch-container {
-		display: inline-flex;
-		align-items: center;
-		cursor: pointer;
-		gap: 10px;
-		user-select: none;
-		font-size: 14px;
-		color: #475569;
-	}
-
-	.switch-container input {
-		display: none;
-	}
-
-	.switch-slider {
-		position: relative;
-		width: 40px;
-		height: 20px;
-		background-color: #cbd5e1;
-		border-radius: 20px;
-		transition: background-color 0.2s;
-	}
-
-	.switch-slider::before {
-		content: '';
-		position: absolute;
-		width: 16px;
-		height: 16px;
-		left: 2px;
-		bottom: 2px;
-		background-color: white;
-		border-radius: 50%;
-		transition: transform 0.2s;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-	}
-
-	.switch-container input:checked + .switch-slider {
-		background-color: #3b82f6;
-	}
-
-	.switch-container input:checked + .switch-slider::before {
-		transform: translateX(20px);
-	}
-
 	.empty-state {
 		text-align: center;
 		padding: 20px;
 		color: #666;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.switch-container {
-			color: #94a3b8;
-		}
-		.switch-slider {
-			background-color: #475569;
-		}
-		.switch-container input:checked + .switch-slider {
-			background-color: #24c8db;
-		}
 	}
 </style>
