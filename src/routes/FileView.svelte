@@ -184,16 +184,19 @@
 		padding: 20px;
 		color: #666;
 	}
+	/* .dark .switch-container { */
+	/* 	color: #94a3b8; */
+	/* } */
 
-	@media (prefers-color-scheme: dark) {
-		.switch-container {
-			color: #94a3b8;
-		}
-		.switch-slider {
-			background-color: #475569;
-		}
-		.switch-container input:checked + .switch-slider {
-			background-color: #24c8db;
-		}
-	}
+	/* .dark .switch-slider { */
+	/* 	background-color: #475569; */
+	/* } */
+
+	/* .dark .switch-container input:checked + .switch-slider { */
+	/* 	background-color: #24c8db; */
+	/* } */
+
+	/* .dark .empty-state { */
+	/* 	color: #aaa; */
+	/* } */
 </style>

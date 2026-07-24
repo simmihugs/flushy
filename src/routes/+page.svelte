@@ -8,9 +8,25 @@
 	import Sidebar from './Sidebar.svelte';
 
 	let showCollapsed = $state(true);
-
+	let theme = $state({ value: false, name: 'light' });
 	let files = $state<MyFile[]>([]);
 	let activeFile = $state<MyFile | null>(null);
+
+	function applyTheme(isDark: boolean) {
+		const themeName = isDark ? 'dark' : 'light';
+		theme = { value: isDark, name: themeName };
+		document.documentElement.setAttribute('data-theme', themeName);
+		localStorage.setItem('theme', themeName);
+		console.log(theme);
+	}
+
+	function toggleTheme() {
+		applyTheme(!theme.value);
+	}
+
+	function getTheme() {
+		return theme.value ? '🌙 Dark' : '☀️ Light';
+	}
 
 	async function handleFiles(newFiles: { name: string; path: string }[]) {
 		let validAdded = false;
@@ -55,6 +71,11 @@
 	}
 
 	onMount(() => {
+		const savedTheme = localStorage.getItem('theme');
+		const isDark = savedTheme === 'dark';
+
+		applyTheme(isDark);
+
 		const unlisten = getCurrentWebview().onDragDropEvent((event) => {
 			if (event.payload.type === 'drop') {
 				const nativePaths = event.payload.paths;
@@ -73,6 +94,7 @@
 </script>
 
 <main class="layout {files.length === 0 ? 'empty-state' : 'active-state'}">
+	<button class="theme-switch" onclick={toggleTheme}>{getTheme()}</button>
 	<Sidebar {files} bind:activeFile onFileSelect={chooseFile} isExpanded={files.length > 0} />
 	{#if files.length > 0}
 		<div class="file-view-container">
@@ -98,19 +120,22 @@
 		-webkit-text-size-adjust: 100%;
 	}
 
-	@media (prefers-color-scheme: dark) {
-		:root {
-			color: #f6f6f6;
-			background-color: #2f2f2f;
-		}
-	}
-
 	:global(body) {
 		margin: 0;
 		padding: 0;
 		overflow: hidden;
 	}
 
+	.theme-switch {
+		position: absolute;
+		top: 15px;
+		right: 15px;
+		z-index: 1000;
+		cursor: pointer;
+		border: 1px solid rgba(0, 0, 0, 0.1);
+		padding: 8px 12px;
+		border-radius: 8px;
+	}
 	.layout {
 		display: flex;
 		height: 100vh;
@@ -119,58 +144,54 @@
 		overflow: hidden;
 	}
 
-	.sidebar {
-		flex: 0 0 300px;
-		/* flex-shrink: 0; */
-		/* width: 300px; */
-	}
+	/* .sidebar { */
+	/* 	flex: 0 0 300px; */
+	/* } */
 
 	.empty-state {
 		justify-content: center;
 		align-items: center;
 	}
 
-	.sidebar.centered {
-		width: 100%;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
+	/* .sidebar.centered { */
+	/* 	width: 100%; */
+	/* 	display: flex; */
+	/* 	justify-content: center; */
+	/* 	align-items: center; */
+	/* } */
+
 	.active-state {
 		flex-direction: row;
 	}
 
 	.file-view-container {
 		display: flex;
-		/* flex-direction: row; */
-		flex: 1;
-		/* width: 100%; */
-		/* overflow: hidden; */
-		min-width: 0;
-	}
-
-	.cool {
-		border: 2px solid red;
 		flex: 1;
 		min-width: 0;
-		display: flex;
 	}
 
-	.sidebar.centered {
-		width: 100%;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
+	/* .cool { */
+	/* 	border: 2px solid red; */
+	/* 	flex: 1; */
+	/* 	min-width: 0; */
+	/* 	display: flex; */
+	/* } */
 
-	.sidebar.expanded {
-		width: 300px;
-		flex-shrink: 0;
-		border-right: 1px solid #ccc;
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-	}
+	/* .sidebar.centered { */
+	/* 	width: 100%; */
+	/* 	display: flex; */
+	/* 	justify-content: center; */
+	/* 	align-items: center; */
+	/* } */
+
+	/* .sidebar.expanded { */
+	/* 	width: 300px; */
+	/* 	flex-shrink: 0; */
+	/* 	border-right: 1px solid #ccc; */
+	/* 	display: flex; */
+	/* 	flex-direction: column; */
+	/* 	justify-content: space-between; */
+	/* } */
 
 	.file-view-container {
 		display: flex;
@@ -178,4 +199,83 @@
 		flex-grow: 1;
 		overflow-x: auto;
 	}
+
+	:root,
+	:global([data-theme='light']) {
+		--bg-color: #f6f6f6;
+		--text-color: #0f0f0f;
+		--input-bg: #ffffff;
+		--input-text: #0f0f0f;
+		--link-hover: #535bf2;
+		--details-card-color: #000000;
+
+		/* event-card */
+		--event-card-background: #f8fafc;
+		--event-card-border: #e2e8f0;
+		--event-card-background-hover: #f1f5f9;
+		--event-card-border-hover: #cbd5e1;
+		--event-card-background-active: #eff6ff;
+		--event-card-border-active: #3b82f6;
+		--event-card-background-has-error: #fef2f2;
+		--event-card-border-has-error: : #f87171;
+		--event-card-background-has-error-hover: #f87171 !important;
+		--event-card-border-has-error: #ed4747 !important;
+		--event-card-top: #64748b;
+		--event-card-title: #1e293b;
+		--event-card-error-badge-background: #fee2e2;
+		--event-card-error-badge-color: #dc2626;
+		--event-card-bottom: #475569;
+
+		/* collapsed cards */
+		--collapsed-card-background: #ffffff;
+		--collapsed-card-border: #e2e8f0;
+		--collapsed-card-color: #475569;
+	}
+
+	:global([data-theme='dark']) {
+		--bg-color: #2f2f2f;
+		--text-color: #f6f6f6;
+		--input-bg: #1e1e1e;
+		--input-text: #ffffff;
+		--link-hover: #24c8db;
+		--details-card-color: #e2e8f0;
+
+		--event-card-background: #1e293b;
+		--event-card-border: #334155;
+		--event-card-background-hover: #334155;
+		--event-card-border-hover: #475569;
+		--event-card-background-active: #1e3a8a;
+		--event-card-border-active: #3b82f6;
+		--event-card-background-has-error: #451a1a;
+		--event-card-border-has-error: #7f1d1d;
+		--event-card-background-has-error-hover: #5c1d1d;
+		--event-card-border-has-error-hover: #991b1b;
+		--event-card-top: #94a3b8;
+		--event-card-title: #f8fafc;
+		--event-card-error-badge-background: #7f1d1d;
+		--event-card-error-badge-color: #fca5a5;
+		--event-card-card-bottom: #cbd5e1;
+
+		--collapsed-card-background: #1e293b;
+		--collapsed-card-border: #334155;
+		--collapsed-card-color: #f8fafc;
+	}
+
+	:global(body) {
+		background-color: var(--bg-color);
+		color: var(--text-color);
+		transition:
+			background-color 0.3s,
+			color 0.3s;
+	}
+
+	/* input, */
+	/* button { */
+	/* 	color: var(--input-text); */
+	/* 	background-color: var(--input-bg); */
+	/* } */
+
+	/* a:hover { */
+	/* 	color: var(--link-hover); */
+	/* } */
 </style>

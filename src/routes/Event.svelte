@@ -30,8 +30,8 @@
 
 <style>
 	.event-card {
-		background: #f8fafc;
-		border: 1px solid #e2e8f0;
+		background: var(--event-card-background);
+		border: 1px solid var(--event-card-border);
 		border-radius: 8px;
 		padding: 12px;
 		text-align: left;
@@ -42,8 +42,6 @@
 		justify-content: space-between;
 
 		min-height: 110px;
-		/* max-width: 700px; */
-		/* margin: 8px auto; */
 
 		width: 100%;
 		margin: 8px 0;
@@ -51,35 +49,35 @@
 	}
 
 	.event-card:hover {
-		border-color: #cbd5e1;
-		background: #f1f5f9;
+		background: var(--event-card-background-hover);
+		border: 1px solid var(--event-card-border-hover);
 	}
 
 	.event-card.active {
-		border-color: #3b82f6;
-		background: #eff6ff;
+		background: var(--event-card-background-active);
+		border-color: var(--event-card-border-active);
 	}
 
 	.event-card.has-error {
-		border-color: #f87171;
-		background: #fef2f2;
+		background: var(--event-card-background-has-error);
+		border-color: var(--event-card-border-has-error);
 	}
 
 	.event-card.has-error:hover {
-		border-color: #ed4747 !important;
-		background: #f87171 !important;
+		background: var(--event-card-background-has-error-hover);
+		border-color: var(--event-card-border-has-error-hover);
 	}
 
 	.card-top {
 		display: flex;
 		justify-content: space-between;
 		font-size: 10px;
-		color: #64748b;
+		color: var(--event-card-top);
 	}
 
 	.error-badge {
-		background: #fee2e2;
-		color: #dc2626;
+		background: var(--event-card-error-badge-background);
+		color: var(--event-card-error-badge-color);
 		padding: 1px 5px;
 		border-radius: 4px;
 		font-weight: bold;
@@ -88,13 +86,13 @@
 	.event-title {
 		font-size: 15px;
 		margin: 8px 0;
-		color: #1e293b;
+		color: var(--event-card-title);
 		font-weight: 600;
 	}
 
 	.card-bottom {
 		font-size: 12px;
-		color: #475569;
+		color: var(--event-card-bottom);
 	}
 
 	.error-indicators {
