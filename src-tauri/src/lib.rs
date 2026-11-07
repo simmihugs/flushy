@@ -1,4 +1,4 @@
-use chrono::{DateTime, Duration, LocalResult, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use chrono::{DateTime, Duration, LocalResult, NaiveDateTime, NaiveTime, TimeZone, Timelike, Utc};
 use roxmltree;
 use serde::Serialize;
 use std::{fs::File, io::Read};
@@ -87,6 +87,7 @@ pub fn parse_si_events(
             let error_front = None;
             let error_back = None;
             let has_error = false;
+            let slot_start_error = false;
 
             Ok(Event {
                 event_id,
@@ -100,6 +101,7 @@ pub fn parse_si_events(
                 error_front,
                 error_back,
                 has_error,
+                slot_start_error,
 
                 xml_string,
             })
@@ -141,6 +143,7 @@ pub fn parse_va_events(
             let error_front = None;
             let error_back = None;
             let has_error = false;
+            let slot_start_error = false;
 
             Ok(Event {
                 event_id,
@@ -154,6 +157,7 @@ pub fn parse_va_events(
                 error_front,
                 error_back,
                 has_error,
+                slot_start_error,
 
                 xml_string,
             })
@@ -161,7 +165,7 @@ pub fn parse_va_events(
         .collect()
 }
 
-pub fn analyze_events(mut events: Vec<Event>) -> Vec<Event> {
+pub fn analyze_events(errors: &mut usize, mut events: Vec<Event>) -> Vec<Event> {
     for i in 0..events.len() - 1 {
         let end_current = events[i].end_time;
         let start_next = events[i + 1].start_time;
@@ -174,10 +178,25 @@ pub fn analyze_events(mut events: Vec<Event>) -> Vec<Event> {
             events[i].error_back = Some(TimeErrorType::Overlap(diff));
             events[i + 1].error_front = Some(TimeErrorType::Overlap(diff));
         }
-    }
 
-    for event in &mut events {
-        event.has_error = event.error_front.is_some() || event.error_back.is_some();
+        if events[i].title.contains("Sendepause") {
+            let st = events[i].start_time;
+            let minutes = st.minute();
+            let seconds = st.second();
+            let nanoseconds = st.nanosecond();
+
+            if seconds == 0 && nanoseconds == 0 && minutes % 5 != 0 {
+                events[i].slot_start_error = true;
+                events[i].title = "P7S1 - Slot".to_string();
+            }
+        }
+
+        events[i].has_error = events[i].error_front.is_some()
+            || events[i].error_back.is_some()
+            || events[i].slot_start_error;
+        if events[i].has_error {
+            *errors += 1;
+        }
     }
 
     events
@@ -204,6 +223,7 @@ pub struct Event {
     pub error_front: Option<TimeErrorType>,
     pub error_back: Option<TimeErrorType>,
     pub has_error: bool,
+    pub slot_start_error: bool,
 
     pub xml_string: String,
 }
@@ -240,20 +260,23 @@ fn parse_file(path: String) -> Result<ParsedEvents, String> {
     let parsed_si_events = parse_si_events(&contents, si_events)?;
     let parsed_va_events = parse_va_events(&contents, va_events)?;
 
-    let analyzed_si_events = analyze_events(parsed_si_events);
-    let analyzed_va_events = analyze_events(parsed_va_events);
+    let mut si_events_errors: usize = 0;
+    let mut va_events_errors: usize = 0;
 
-    let si_events_errors: usize = analyzed_si_events
-        .iter()
-        .filter(|event| event.has_error)
-        .collect::<Vec<_>>()
-        .len();
+    let analyzed_si_events = analyze_events(&mut si_events_errors, parsed_si_events);
+    let analyzed_va_events = analyze_events(&mut va_events_errors, parsed_va_events);
 
-    let va_events_errors: usize = analyzed_va_events
-        .iter()
-        .filter(|event| event.has_error)
-        .collect::<Vec<_>>()
-        .len();
+    // let si_events_errors: usize = analyzed_si_events
+    //     .iter()
+    //     .filter(|event| event.has_error)
+    //     .collect::<Vec<_>>()
+    //     .len();
+
+    // let va_events_errors: usize = analyzed_va_events
+    //     .iter()
+    //     .filter(|event| event.has_error)
+    //     .collect::<Vec<_>>()
+    //     .len();
 
     Ok(ParsedEvents {
         si_events: analyzed_si_events,

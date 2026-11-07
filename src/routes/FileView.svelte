@@ -24,6 +24,7 @@
 		let events = showVaEvents ? activeFile.va_events : activeFile.si_events;
 
 		if (!showCollapsed) {
+			console.log(events[2]);
 			return events.map((event) => ({
 				type: event.hasError ? 'error' : 'ok-flat',
 				data: event

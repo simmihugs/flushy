@@ -32,6 +32,9 @@
 			{#if event.errorFront}
 				<span class="error-badge front">⚠️ Front Error: {explainError(event.errorFront)}</span>
 			{/if}
+			{#if event.slotStartError}
+				<span class="error-badge front">⚠️ P7S1 Slot start nicht 5min genau {event.startTime}</span>
+			{/if}
 		</div>
 
 		<div class="card-top">
