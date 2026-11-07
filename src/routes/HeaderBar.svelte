@@ -3,6 +3,7 @@
 		files,
 		toggleTheme,
 		getTheme,
+		activeFile,
 		showVaEvents = $bindable(),
 		showCollapsed = $bindable()
 	} = $props();
@@ -12,11 +13,20 @@
 	<div class="header-content">
 		{#if files.length > 0}
 			<div class="filter-area">
-				<label class="filter-container">
-					<input type="checkbox" bind:checked={showVaEvents} />
-					<span class="filter-slider"></span>
-					<span class="filter-label">Show VaEvents</span>
-				</label>
+				<button
+					class="mode-button"
+					class:inactive={showVaEvents}
+					onclick={() => (showVaEvents = !showVaEvents)}
+				>
+					<span> Epg Events: {activeFile.si_events_errors} Errors </span>
+				</button>
+				<button
+					class="mode-button"
+					class:inactive={!showVaEvents}
+					onclick={() => (showVaEvents = !showVaEvents)}
+				>
+					<span> VaEvents: {activeFile.va_events_errors} Errors </span>
+				</button>
 				<label class="filter-container">
 					<input type="checkbox" bind:checked={showCollapsed} />
 					<span class="filter-slider"></span>
@@ -29,6 +39,33 @@
 </header>
 
 <style>
+	.mode-button {
+		margin-left: 4px;
+		margin-right: 4px;
+		padding: 6px 12px;
+		border-radius: 8px;
+		cursor: pointer;
+
+		background: var(--mode-background);
+		color: var(--mode-color);
+		border: 1px solid var(--mode-border);
+		box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+	}
+
+	.mode-button:hover {
+		border-color: var(--mode-border-hover);
+	}
+
+	.mode-button.inactive {
+		background: var(--mode-inactive-background);
+		color: var(--mode-inactive-color);
+		border: 1px solid var(--mode-inactive-border);
+	}
+
+	.mode-button.inactive:hover {
+		border-color: var(--mode-inactive-border-hover);
+	}
+
 	.header-bar {
 		width: 100%;
 		height: 50px;

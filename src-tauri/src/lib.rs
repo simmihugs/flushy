@@ -212,6 +212,8 @@ pub struct Event {
 pub struct ParsedEvents {
     pub si_events: Vec<Event>,
     pub va_events: Vec<Event>,
+    pub si_events_errors: usize,
+    pub va_events_errors: usize,
 }
 
 #[tauri::command]
@@ -238,9 +240,26 @@ fn parse_file(path: String) -> Result<ParsedEvents, String> {
     let parsed_si_events = parse_si_events(&contents, si_events)?;
     let parsed_va_events = parse_va_events(&contents, va_events)?;
 
+    let analyzed_si_events = analyze_events(parsed_si_events);
+    let analyzed_va_events = analyze_events(parsed_va_events);
+
+    let si_events_errors: usize = analyzed_si_events
+        .iter()
+        .filter(|event| event.has_error)
+        .collect::<Vec<_>>()
+        .len();
+
+    let va_events_errors: usize = analyzed_va_events
+        .iter()
+        .filter(|event| event.has_error)
+        .collect::<Vec<_>>()
+        .len();
+
     Ok(ParsedEvents {
-        si_events: analyze_events(parsed_si_events),
-        va_events: analyze_events(parsed_va_events),
+        si_events: analyzed_si_events,
+        va_events: analyzed_va_events,
+        si_events_errors: si_events_errors,
+        va_events_errors: va_events_errors,
     })
 }
 

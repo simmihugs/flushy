@@ -58,6 +58,8 @@
 	async function runAutomaticParsing(file: MyFile) {
 		try {
 			const answer = await invoke('parse_file', { path: file.path });
+			file.si_events_errors = answer.si_events_errors;
+			file.va_events_errors = answer.va_events_errors;
 			file.si_events = answer.si_events as any[];
 			file.va_events = answer.va_events as any[];
 		} catch (err) {
@@ -104,7 +106,7 @@
 </script>
 
 <main class="layout">
-	<HeaderBar {files} {toggleTheme} {getTheme} bind:showVaEvents bind:showCollapsed />
+	<HeaderBar {files} {toggleTheme} {getTheme} {activeFile} bind:showVaEvents bind:showCollapsed />
 
 	<div class="content-body {files.length === 0 ? 'empty-state' : ''}">
 		<Sidebar
@@ -198,6 +200,16 @@
 		--theme-filter-color: #0f0f0f;
 		--theme-filter-border-hover: #396cd8;
 
+		--mode-background: #f6f6f6;
+		--mode-border: #0f0f0f;
+		--mode-color: #0f0f0f;
+		--mode-border-hover: #396cd8;
+
+		--mode-inactive-background: #e9e9e9;
+		--mode-inactive-border: #cccccc;
+		--mode-inactive-color: #999999;
+		--mode-inactive-border-hover: #396cd8;
+
 		--bg-color: #f6f6f6;
 		--text-color: #0f0f0f;
 		--input-bg: #ffffff;
@@ -242,6 +254,16 @@
 		--theme-filter-border: #f6f6f6;
 		--theme-filter-color: #f6f6f6;
 		--theme-filter-border-hover: #396cd8;
+
+		--mode-background: #2f2f2f;
+		--mode-border: #f6f6f6;
+		--mode-color: #f6f6f6;
+		--mode-border-hover: #396cd8;
+
+		--mode-inactive-background: #1e1e1e;
+		--mode-inactive-border: #444444;
+		--mode-inactive-color: #777777;
+		--mode-inactive-border-hover: #396cd8;
 
 		--bg-color: #2f2f2f;
 		--text-color: #f6f6f6;
