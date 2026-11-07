@@ -1,5 +1,6 @@
 export interface MyFile {
 	name: string;
 	path: string;
-	events: any[];
+	si_events: any[];
+	va_events: any[];
 }

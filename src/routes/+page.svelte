@@ -9,6 +9,7 @@
 	import HeaderBar from './HeaderBar.svelte';
 
 	let showCollapsed = $state(true);
+	let showVaEvents = $state(false);
 	let theme = $state({ value: false, name: 'light' });
 	let files = $state<MyFile[]>([]);
 	let activeFile = $state<MyFile | null>(null);
@@ -41,7 +42,8 @@
 			const myfile: MyFile = {
 				name: file.name,
 				path: file.path,
-				events: []
+				si_events: [],
+				va_events: []
 			};
 
 			files = [...files, myfile];
@@ -56,8 +58,8 @@
 	async function runAutomaticParsing(file: MyFile) {
 		try {
 			const answer = await invoke('parse_file', { path: file.path });
-			console.log(answer);
-			file.events = answer.si_events as any[];
+			file.si_events = answer.si_events as any[];
+			file.va_events = answer.va_events as any[];
 		} catch (err) {
 			console.error('Fehler beim automatischen Parsen:', err);
 		}
@@ -102,7 +104,7 @@
 </script>
 
 <main class="layout">
-	<HeaderBar {files} {toggleTheme} {getTheme} bind:showCollapsed />
+	<HeaderBar {files} {toggleTheme} {getTheme} bind:showVaEvents bind:showCollapsed />
 
 	<div class="content-body {files.length === 0 ? 'empty-state' : ''}">
 		<Sidebar
@@ -114,7 +116,7 @@
 		/>
 		{#if files.length > 0}
 			<div class="file-view-container">
-				<FileView {showCollapsed} {activeFile} />
+				<FileView {showVaEvents} {showCollapsed} {activeFile} />
 			</div>
 		{/if}
 	</div>

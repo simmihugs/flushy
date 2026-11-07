@@ -1,11 +1,22 @@
 <script lang="ts">
-	let { files, toggleTheme, getTheme, showCollapsed = $bindable() } = $props();
+	let {
+		files,
+		toggleTheme,
+		getTheme,
+		showVaEvents = $bindable(),
+		showCollapsed = $bindable()
+	} = $props();
 </script>
 
 <header class="header-bar">
 	<div class="header-content">
 		{#if files.length > 0}
 			<div class="filter-area">
+				<label class="filter-container">
+					<input type="checkbox" bind:checked={showVaEvents} />
+					<span class="filter-slider"></span>
+					<span class="filter-label">Show VaEvents</span>
+				</label>
 				<label class="filter-container">
 					<input type="checkbox" bind:checked={showCollapsed} />
 					<span class="filter-slider"></span>
