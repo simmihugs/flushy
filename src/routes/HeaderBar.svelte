@@ -15,25 +15,13 @@
 	<div class="header-content">
 		{#if files.length > 0}
 			<div class="filter-area">
-				<div
-					class="tooltip-wrapper"
+				<label
+					class="filter-container"
 					onmouseenter={() => (show = true)}
 					onmouseleave={() => (show = false)}
 				>
-					<div
-						class="icon-button"
-						onclick={() => {
-							showCollapsed = showCollapsed ? false : true;
-							console.log('showCollapsed: ', showCollapsed);
-						}}
-					>
-						{#if showCollapsed}
-							▶️
-						{:else}
-							🔽
-						{/if}
-					</div>
-
+					<input type="checkbox" bind:checked={showCollapsed} />
+					<span class="filter-slider"></span>
 					{#if show}
 						{#if showCollapsed}
 							<div class="popup">Alle Blöcke anzeigen</div>
@@ -41,7 +29,8 @@
 							<div class="popup">Fehlerfreie Blöcke zusammenfassen</div>
 						{/if}
 					{/if}
-				</div>
+				</label>
+
 				<button
 					class="mode-button"
 					class:inactive={showVaEvents}
@@ -159,6 +148,7 @@
 	}
 
 	.filter-container {
+		position: relative;
 		display: inline-flex;
 		align-items: center;
 		cursor: pointer;
