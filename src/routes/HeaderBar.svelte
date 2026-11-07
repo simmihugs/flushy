@@ -18,14 +18,26 @@
 					class:inactive={showVaEvents}
 					onclick={() => (showVaEvents = !showVaEvents)}
 				>
-					<span> Epg Events: {activeFile.si_events_errors} Errors </span>
+					<span>
+						Epg Events:
+						<span class={activeFile.si_events_errors > 0 ? 'red' : 'green'}
+							>{activeFile.si_events_errors}</span
+						>
+						Errors
+					</span>
 				</button>
 				<button
 					class="mode-button"
 					class:inactive={!showVaEvents}
 					onclick={() => (showVaEvents = !showVaEvents)}
 				>
-					<span> VaEvents: {activeFile.va_events_errors} Errors </span>
+					<span>
+						VaEvents:
+						<span class={activeFile.va_events_errors > 0 ? 'red' : 'green'}
+							>{activeFile.va_events_errors}</span
+						>
+						Errors
+					</span>
 				</button>
 				<label class="filter-container">
 					<input type="checkbox" bind:checked={showCollapsed} />
@@ -39,6 +51,14 @@
 </header>
 
 <style>
+	.red {
+		color: tomato;
+	}
+
+	.green {
+		color: green;
+	}
+
 	.mode-button {
 		margin-left: 4px;
 		margin-right: 4px;
