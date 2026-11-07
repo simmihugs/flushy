@@ -7,16 +7,45 @@
 		showVaEvents = $bindable(),
 		showCollapsed = $bindable()
 	} = $props();
+
+	let show = $state(false);
 </script>
 
 <header class="header-bar">
 	<div class="header-content">
 		{#if files.length > 0}
 			<div class="filter-area">
+				<div
+					class="tooltip-wrapper"
+					onmouseenter={() => (show = true)}
+					onmouseleave={() => (show = false)}
+				>
+					<div
+						class="icon-button"
+						onclick={() => {
+							showCollapsed = showCollapsed ? false : true;
+							console.log('showCollapsed: ', showCollapsed);
+						}}
+					>
+						{#if showCollapsed}
+							▶️
+						{:else}
+							🔽
+						{/if}
+					</div>
+
+					{#if show}
+						{#if showCollapsed}
+							<div class="popup">Alle Blöcke anzeigen</div>
+						{:else}
+							<div class="popup">Fehlerfreie Blöcke zusammenfassen</div>
+						{/if}
+					{/if}
+				</div>
 				<button
 					class="mode-button"
 					class:inactive={showVaEvents}
-					onclick={() => (showVaEvents = !showVaEvents)}
+					onclick={() => (showVaEvents = false)}
 				>
 					<span>
 						Epg Events:
@@ -29,7 +58,7 @@
 				<button
 					class="mode-button"
 					class:inactive={!showVaEvents}
-					onclick={() => (showVaEvents = !showVaEvents)}
+					onclick={() => (showVaEvents = true)}
 				>
 					<span>
 						VaEvents:
@@ -39,11 +68,6 @@
 						Errors
 					</span>
 				</button>
-				<label class="filter-container">
-					<input type="checkbox" bind:checked={showCollapsed} />
-					<span class="filter-slider"></span>
-					<span class="filter-label">Fehlerfreie Blöcke zusammenfassen</span>
-				</label>
 			</div>
 		{/if}
 		<button class="theme-switch-button" onclick={toggleTheme}>{getTheme()}</button>
@@ -51,6 +75,13 @@
 </header>
 
 <style>
+	.icon-button {
+		background: transparent;
+		cursor: pointer;
+		margin-left: 4px;
+		margin-right: 4px;
+	}
+
 	.red {
 		color: tomato;
 	}
@@ -169,5 +200,29 @@
 
 	.filter-container input:checked + .filter-slider::before {
 		transform: translateX(20px);
+	}
+
+	.tooltip-container {
+		position: relative;
+		display: inline-block;
+	}
+
+	.tooltip-wrapper {
+		position: relative;
+		display: inline-block;
+	}
+
+	.popup {
+		position: absolute;
+		top: calc(100% + 8px);
+		left: 50%;
+		background: var(--mode-background);
+		color: var(--mode-color);
+		padding: 6px 10px;
+		border-radius: 4px;
+		font-size: 0.8rem;
+		white-space: nowrap;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+		z-index: 10;
 	}
 </style>
