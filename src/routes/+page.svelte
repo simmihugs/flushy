@@ -56,7 +56,8 @@
 	async function runAutomaticParsing(file: MyFile) {
 		try {
 			const answer = await invoke('parse_file', { path: file.path });
-			file.events = answer as any[];
+			console.log(answer);
+			file.events = answer.si_events as any[];
 		} catch (err) {
 			console.error('Fehler beim automatischen Parsen:', err);
 		}
