@@ -1,16 +1,62 @@
 <script lang="ts">
-	let { files, toggleTheme, getTheme, showCollapsed = $bindable() } = $props();
+	let {
+		files,
+		toggleTheme,
+		getTheme,
+		activeFile,
+		showVaEvents = $bindable(),
+		showCollapsed = $bindable()
+	} = $props();
+
+	let show = $state(false);
 </script>
 
 <header class="header-bar">
 	<div class="header-content">
 		{#if files.length > 0}
 			<div class="filter-area">
-				<label class="filter-container">
+				<label
+					class="filter-container"
+					onmouseenter={() => (show = true)}
+					onmouseleave={() => (show = false)}
+				>
 					<input type="checkbox" bind:checked={showCollapsed} />
 					<span class="filter-slider"></span>
-					<span class="filter-label">Fehlerfreie Blöcke zusammenfassen</span>
+					{#if show}
+						{#if showCollapsed}
+							<div class="popup">Alle Blöcke anzeigen</div>
+						{:else}
+							<div class="popup">Fehlerfreie Blöcke zusammenfassen</div>
+						{/if}
+					{/if}
 				</label>
+
+				<button
+					class="mode-button"
+					class:inactive={showVaEvents}
+					onclick={() => (showVaEvents = false)}
+				>
+					<span>
+						Epg Events:
+						<span class={activeFile.si_events_errors > 0 ? 'red' : 'green'}
+							>{activeFile.si_events_errors}</span
+						>
+						Errors
+					</span>
+				</button>
+				<button
+					class="mode-button"
+					class:inactive={!showVaEvents}
+					onclick={() => (showVaEvents = true)}
+				>
+					<span>
+						VaEvents:
+						<span class={activeFile.va_events_errors > 0 ? 'red' : 'green'}
+							>{activeFile.va_events_errors}</span
+						>
+						Errors
+					</span>
+				</button>
 			</div>
 		{/if}
 		<button class="theme-switch-button" onclick={toggleTheme}>{getTheme()}</button>
@@ -18,6 +64,48 @@
 </header>
 
 <style>
+	.icon-button {
+		background: transparent;
+		cursor: pointer;
+		margin-left: 4px;
+		margin-right: 4px;
+	}
+
+	.red {
+		color: tomato;
+	}
+
+	.green {
+		color: green;
+	}
+
+	.mode-button {
+		margin-left: 4px;
+		margin-right: 4px;
+		padding: 6px 12px;
+		border-radius: 8px;
+		cursor: pointer;
+
+		background: var(--mode-background);
+		color: var(--mode-color);
+		border: 1px solid var(--mode-border);
+		box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+	}
+
+	.mode-button:hover {
+		border-color: var(--mode-border-hover);
+	}
+
+	.mode-button.inactive {
+		background: var(--mode-inactive-background);
+		color: var(--mode-inactive-color);
+		border: 1px solid var(--mode-inactive-border);
+	}
+
+	.mode-button.inactive:hover {
+		border-color: var(--mode-inactive-border-hover);
+	}
+
 	.header-bar {
 		width: 100%;
 		height: 50px;
@@ -60,6 +148,7 @@
 	}
 
 	.filter-container {
+		position: relative;
 		display: inline-flex;
 		align-items: center;
 		cursor: pointer;
@@ -101,5 +190,29 @@
 
 	.filter-container input:checked + .filter-slider::before {
 		transform: translateX(20px);
+	}
+
+	.tooltip-container {
+		position: relative;
+		display: inline-block;
+	}
+
+	.tooltip-wrapper {
+		position: relative;
+		display: inline-block;
+	}
+
+	.popup {
+		position: absolute;
+		top: calc(100% + 8px);
+		left: 50%;
+		background: var(--mode-background);
+		color: var(--mode-color);
+		padding: 6px 10px;
+		border-radius: 4px;
+		font-size: 0.8rem;
+		white-space: nowrap;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+		z-index: 10;
 	}
 </style>

@@ -3,8 +3,10 @@
 	import CollapsedCard from './CollapsedCard.svelte';
 	import DetailsComponent from './DetailsComponent.svelte';
 
-	let { showCollapsed = $bindable(), activeFile } = $props();
+	let { showVaEvents = $bindable(), showCollapsed = $bindable(), activeFile } = $props();
+
 	let selectedEvent = $state(null);
+
 	function toggleSelection(event) {
 		if (selectedEvent?.eventId === event.eventId) {
 			selectedEvent = null;
@@ -15,12 +17,15 @@
 	}
 
 	let groupedEvents = $derived.by(() => {
-		if (activeFile == null || !activeFile.events) {
+		if (activeFile == null || (!activeFile.si_events && !activeFile.va_events)) {
 			return [];
 		}
 
+		let events = showVaEvents ? activeFile.va_events : activeFile.si_events;
+
 		if (!showCollapsed) {
-			return activeFile.events.map((event) => ({
+			console.log(events[2]);
+			return events.map((event) => ({
 				type: event.hasError ? 'error' : 'ok-flat',
 				data: event
 			}));
@@ -29,7 +34,7 @@
 		const result = [];
 		let currentOkGroup = null;
 
-		for (const event of activeFile.events) {
+		for (const event of events) {
 			if (event.hasError) {
 				if (currentOkGroup) {
 					result.push(currentOkGroup);

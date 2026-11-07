@@ -1,5 +1,11 @@
 # pts export verifier
 
+## dev mode
+
+```shell
+npm run tauri dev 
+```
+
 ## test suite
 
 ### test for xml behavior
@@ -14,3 +20,4 @@ cargo test
 ## UI
 
 ![Alternativer Text](img/ui.jpeg)  
+
