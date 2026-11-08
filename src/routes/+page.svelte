@@ -210,6 +210,9 @@
 		--mode-inactive-color: #999999;
 		--mode-inactive-border-hover: #396cd8;
 
+		--trash-color: #0f0f0f;
+		--trash-hover-color: #ff2200;
+
 		--bg-color: #f6f6f6;
 		--text-color: #0f0f0f;
 		--input-bg: #ffffff;
@@ -264,6 +267,9 @@
 		--mode-inactive-border: #444444;
 		--mode-inactive-color: #777777;
 		--mode-inactive-border-hover: #396cd8;
+
+		--trash-color: #f6f6f6;
+		--trash-hover-color: #ff2200;
 
 		--bg-color: #2f2f2f;
 		--text-color: #f6f6f6;

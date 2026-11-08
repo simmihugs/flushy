@@ -35,6 +35,7 @@
 					class="mode-button"
 					class:inactive={showVaEvents}
 					onclick={() => (showVaEvents = false)}
+					title="VaEvents anzeigen"
 				>
 					<span>
 						Epg Events:
@@ -48,6 +49,7 @@
 					class="mode-button"
 					class:inactive={!showVaEvents}
 					onclick={() => (showVaEvents = true)}
+					title="EPG Events anzeigen"
 				>
 					<span>
 						VaEvents:
