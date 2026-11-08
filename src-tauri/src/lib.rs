@@ -166,6 +166,9 @@ pub fn parse_va_events(
 }
 
 pub fn analyze_events(errors: &mut usize, mut events: Vec<Event>) -> Vec<Event> {
+    if events.len() <= 0 {
+        return vec![];
+    }
     for i in 0..events.len() - 1 {
         let end_current = events[i].end_time;
         let start_next = events[i + 1].start_time;
