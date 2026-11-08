@@ -9,8 +9,8 @@
    1. Had to github and merge feature/bug fix into main.
    2. Locally, add new tag and push
       #+begin_src shell
-        git tag v0.1.6
-        git push origin v0.1.6
+        git tag v0.1.*
+        git push origin v0.1.*
       #+end_src
    3. See built process
       [[file:img/build-process.jpeg]]
