@@ -32,7 +32,21 @@ jobs:
 
       - name: install frontend dependencies
         run: npm ci
-
+     
+      - name: Update Tauri version from tag
+        shell: bash
+        run: |
+          TAG=${{ github.ref_name }}
+          VERSION=${TAG#v}
+          echo "Updating tauri.conf.json version to $VERSION"
+          node -e "
+            const fs = require('fs');
+            const configPath = 'src-tauri/tauri.conf.json';
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            config.version = '$VERSION';
+            fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+          "
+          
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
         env:
