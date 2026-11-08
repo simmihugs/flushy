@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Trash } from '@lucide/svelte';
 	let { files, activeFile = $bindable(), onFileSelect, isExpanded, onFileDelete } = $props();
 </script>
 
@@ -19,7 +20,7 @@
 						}}
 						title="Datei entfernen"
 					>
-						🗑️
+						<Trash size={20} />
 					</button>
 				</div>
 			{/each}
@@ -172,11 +173,13 @@
 			opacity 0.2s,
 			transform 0.1s;
 		border-radius: 0;
+		color: var(--trash-color);
 	}
 
 	.delete-btn:hover {
 		opacity: 1;
 		transform: scale(1.1);
+		color: var(--trash-hover-color);
 	}
 
 	.file-item {
