@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Trash } from '@lucide/svelte';
+	import { Trash, CircleExclamationPoint } from '@lucide/svelte';
 	let { files, activeFile = $bindable(), onFileSelect, isExpanded, onFileDelete } = $props();
 </script>
 
@@ -7,10 +7,17 @@
 	{#if isExpanded}
 		<div class="file-list">
 			{#each files as file}
+            <div class="file-wrapper">
+                {#if (file.si_events_errors > 0 || file.va_events_errors > 0)}
+                       <span class="error-badge" title="EPG errors: {file.si_events_errors} VaErrors: {file.va_events_errors}">
+                          <CircleExclamationPoint style="color: tomato;" size={12} /> 
+                       </span>
+                    {/if}
 				<div class="file-item" class:active={activeFile?.path === file.path}>
 					<button class="file-select-btn" onclick={() => (activeFile = file)} title={file.name}>
 						<span class="file-name">{file.name}</span>
-					</button>
+					</button>                    
+
 
 					<button
 						class="delete-btn"
@@ -22,6 +29,7 @@
 					>
 						<Trash size={20} />
 					</button>
+				</div>
 				</div>
 			{/each}
 		</div>
@@ -238,5 +246,23 @@
 	.delete-btn:hover {
 		opacity: 1 !important;
 		transform: scale(1.15);
+	}
+
+.file-wrapper {
+margin: 6px;
+		position: relative;
+	}
+
+	.error-badge {
+		position: absolute;
+		top: -6px;
+		left: -6px;
+		z-index: 10;
+		background-color: var(--input-bg, #ffffff);
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 	}
 </style>
