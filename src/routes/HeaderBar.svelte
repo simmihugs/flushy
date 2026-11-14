@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Sun, Moon } from '@lucide/svelte';
 	let {
 		files,
 		toggleTheme,
@@ -61,7 +62,17 @@
 				</button>
 			</div>
 		{/if}
-		<button class="theme-switch-button" onclick={toggleTheme}>{getTheme()}</button>
+		<button class="theme-switch-button" onclick={toggleTheme}>
+			{#if getTheme()}
+				<span>
+					<Moon />
+				</span>
+			{:else}
+				<span>
+					<Sun />
+				</span>
+			{/if}
+		</button>
 	</div>
 </header>
 
@@ -132,7 +143,7 @@
 
 		background: var(--theme-switch-background);
 		color: var(--theme-switch-color);
-		border: 1px solid var(--theme-switch-border);
+		border: none;
 		transition:
 			border-color 0.25s ease,
 			background-color 0.25s ease;
@@ -141,7 +152,7 @@
 	}
 
 	.theme-switch-button:hover {
-		border-color: var(--theme-switch-border-hover);
+		color: var(--theme-switch-border-hover);
 	}
 
 	.filter-area {

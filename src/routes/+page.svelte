@@ -33,7 +33,8 @@
 	}
 
 	function getTheme() {
-		return theme.value ? '🌙 Dark' : '☀️ Light';
+		//return theme.value ? '🌙 Dark' : '☀️ Light';
+		return theme.value;
 	}
 
 	async function handleFiles(newFiles: { name: string; path: string }[]) {
@@ -43,7 +44,9 @@
 				name: file.name,
 				path: file.path,
 				si_events: [],
-				va_events: []
+				va_events: [],
+				si_events_errors: 0,
+				va_events_errors: 0
 			};
 
 			files = [...files, myfile];
