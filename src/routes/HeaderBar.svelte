@@ -64,12 +64,12 @@
 		{/if}
 		<button class="theme-switch-button" onclick={toggleTheme}>
 			{#if getTheme()}
-				<span>
-					<Moon />
+				<span title="Switch to Light mode">
+					<Moon size={15} />
 				</span>
 			{:else}
-				<span>
-					<Sun />
+				<span title="Switch to Dark mode">
+					<Sun size={15} />
 				</span>
 			{/if}
 		</button>
