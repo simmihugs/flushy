@@ -29,10 +29,11 @@
 ** UI
    
 *** Database view
-    [[file:img/Screenshot 2026-11-22 232219.png]]
+    [[file:img/database-view.png]]
 
-*** Config view    
-    [[file:img/Screenshot 2026-11-22 232256.png]]
-
+*** Config view
+    [[file:img/config-view.png]]
+    
 *** File view
-    [[file:img/Screenshot 2026-11-22 232338.png]]
+    [[file:img/file-view.png]]
+
