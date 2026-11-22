@@ -32,6 +32,7 @@ pub async fn run_ses_scraper<F>(
     url: &str,
     email: &str,
     password: &str,
+    logger: &Option<crate::LogCallback>,
     download_dir: &Path,
     headless: bool,
     on_page: F,
@@ -39,7 +40,7 @@ pub async fn run_ses_scraper<F>(
 where
     F: FnMut(usize, &Path) -> Result<bool>,
 {
-    println!("\n\n\nurl: {}\n\n\n", url);
+    crate::emit_log(logger, "INFO", "scraper", &format!("Öffne {url}"));
 
     std::fs::create_dir_all(download_dir)?;
 
@@ -54,7 +55,7 @@ where
     context.set_default_timeout(60_000.0).await;
     let page = context.new_page().await?;
 
-    let result = scrape_pages(&page, url, email, password, download_dir, on_page).await;
+    let result = scrape_pages(&page, logger, url, email, password, download_dir, on_page).await;
 
     let _ = context.close().await;
     let _ = browser.close().await;
@@ -63,6 +64,7 @@ where
 
 async fn scrape_pages<F>(
     page: &Page,
+    logger: &Option<crate::LogCallback>,
     url: &str,
     email: &str,
     password: &str,
@@ -86,7 +88,7 @@ where
     page.get_by_role(AriaRole::Button, role_name("Next"))
         .click(None)
         .await?;
-    eprintln!("Login into SES successful.");
+    crate::emit_log(logger, "INFO", "scraper", "Login into SES successful.");
 
     let frame = page.frame_locator("#extension-module");
     frame
@@ -129,16 +131,26 @@ where
         download
             .save_as(target.to_str().unwrap_or_default())
             .await?;
-        eprintln!("Successfully downloaded page {}", n + 1);
+        crate::emit_log(
+            logger,
+            "INFO",
+            "scraper",
+            format!("Successfully downloaded page {}", n + 1).as_str(),
+        );
 
         if on_page(n, &target)? {
-            eprintln!("Stop requested after page {}", n + 1);
+            crate::emit_log(
+                logger,
+                "INFO",
+                "scraper",
+                format!("Stop requested after page {}", n + 1).as_str(),
+            );
             return Ok(RunEnd::StoppedEarly);
         }
 
         let next_btn = frame.locator("nav.paging a:has(i.icon-control-next)");
         if next_btn.count().await? == 0 {
-            eprintln!("Reached end of data storage");
+            crate::emit_log(logger, "INFO", "scraper", "Reached end of data storage");
             return Ok(RunEnd::ReachedEnd);
         }
         next_btn.click(None).await?;

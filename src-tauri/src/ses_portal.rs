@@ -54,6 +54,10 @@ pub async fn sync_library_cmd(
     let _guard = RunGuard(state.running.clone());
     state.cancel.store(false, Ordering::SeqCst);
 
+    let logger: ses_downloader_pw::LogCallback = Arc::new(|level, scope, msg| {
+        crate::app_log::write_log(level, scope, msg);
+    });
+
     sync_library(
         SyncOptions {
             db,
@@ -63,6 +67,7 @@ pub async fn sync_library_cmd(
             data_dir,
             headless: true,
             keep_files: false,
+            logger: Some(logger),
         },
         state.cancel.clone(),
         |progress: Progress| {
@@ -134,6 +139,14 @@ pub fn start_sync(
                 return;
             }
         };
+        let logger: ses_downloader_pw::LogCallback = Arc::new(|level, scope, msg| {
+            crate::app_log::write_log(level, scope, msg);
+        });
+
+        crate::log_info!(
+            "sync",
+            "Starte Sync (db={db}, url={url}, headless={headless})"
+        );
 
         match ses_downloader_pw::sync::sync_library(
             ses_downloader_pw::sync::SyncOptions {
@@ -144,6 +157,7 @@ pub fn start_sync(
                 data_dir,
                 headless,
                 keep_files: false,
+                logger: Some(logger),
             },
             cancel,
             |progress| {
@@ -153,6 +167,11 @@ pub fn start_sync(
         .await
         {
             Ok(summary) => {
+                crate::log_info!(
+                    "sync",
+                    "Sync fertig: {} Einträge in DB",
+                    summary.total_in_db
+                );
                 let _ = app_handle.emit(
                     "sync-finished",
                     serde_json::json!({
@@ -163,6 +182,7 @@ pub fn start_sync(
                 );
             }
             Err(e) => {
+                crate::log_error!("sync", "Sync fehlgeschlagen: {e:#}");
                 let _ = app_handle.emit(
                     "sync-finished",
                     serde_json::json!({

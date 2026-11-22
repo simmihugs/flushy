@@ -1,13 +1,22 @@
+pub mod app_log;
 pub mod config;
 pub mod events;
 pub mod ses_portal;
 
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
+            if let Ok(data_dir) = app.path().app_data_dir() {
+                app_log::init_logging(data_dir.clone());
+                app_log::info(
+                    "app",
+                    &format!("Logging initialisiert in {}/logs", data_dir.display()),
+                );
+            }
+
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let _ = handle.emit(
@@ -17,6 +26,7 @@ pub fn run() {
                     }),
                 );
                 if let Err(e) = playwright_rs::install_browsers(Some(&["chromium"])).await {
+                    app_log::error("setup", &format!("Browser-Setup fehlgeschlagen: {e:#}"));
                     let _ = handle.emit(
                         "sync-finished",
                         serde_json::json!({

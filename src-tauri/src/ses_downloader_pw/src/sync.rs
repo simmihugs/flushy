@@ -22,6 +22,7 @@ pub struct SyncOptions {
     pub headless: bool,
     /// Keep the downloaded xlsx files after they were stored in the DB.
     pub keep_files: bool,
+    pub logger: Option<crate::LogCallback>,
 }
 
 /// Sent to the UI after every page.
@@ -75,6 +76,7 @@ where
         &opts.url,
         &opts.email,
         &opts.password,
+        &opts.logger,
         &download_dir,
         opts.headless,
         |n, path| {
@@ -124,6 +126,7 @@ fn sync_future_is_send() {
         db: String::new(),
         email: String::new(),
         password: String::new(),
+        logger: None,
         data_dir: PathBuf::new(),
         headless: true,
         keep_files: false,

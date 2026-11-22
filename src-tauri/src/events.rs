@@ -230,6 +230,17 @@ pub fn analyze_events(
                 maybe_ids.push(cid);
             }
         }
+        if events[i].duration_error == DurationCheckStatus::Yes {
+            crate::log_warn!(
+                "duration",
+                "Duration Error: event_id={} content_id={:?} title={:?} db_ms={} < event_ms={}",
+                events[i].event_id,
+                events[i].content_id,
+                events[i].title,
+                events[i].db_duration,
+                events[i].duration
+            );
+        }
 
         events[i].has_error = events[i].error_front.is_some()
             || events[i].error_back.is_some()
@@ -407,6 +418,16 @@ fn parse_file_with_runtimes(
         parsed_va_events,
         runtimes,
         &mut maybe_event_ids,
+    );
+
+    crate::log_info!(
+        "events",
+        "Geparst: {path} (SI: {}, VA: {}, SI-Errors: {}, VA-Errors: {}, Maybes: {})",
+        analyzed_si_events.len(),
+        analyzed_va_events.len(),
+        si_events_errors,
+        va_events_errors,
+        maybe_event_ids.len()
     );
 
     Ok(ParsedEvents {
