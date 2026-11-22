@@ -443,23 +443,176 @@ fn parse_file_with_runtimes(
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_si_parsing() -> std::io::Result<()> {
-        match parse_file("../../../Downloads/6.11/hdplus_20261107_54526.pts".to_string()) {
-            Err(..) => (),
-            Ok(events) => println!("{} si_events", events.si_events.len()),
-        }
+    // Die Testdaten sind eingebettet, damit die Tests weder von Dateien im
+    // Download-Ordner noch von Tauri (AppHandle) abhängen. Getestet wird die
+    // reine Logik über `parse_file_with_runtimes`.
 
-        Ok(())
+    /// Schreibt `xml` in eine temporäre Datei, parst sie und räumt wieder auf.
+    fn parse(
+        name: &str,
+        xml: &str,
+        runtimes: &HashMap<String, Option<i64>>,
+    ) -> Result<ParsedEvents, String> {
+        let path =
+            std::env::temp_dir().join(format!("events-test-{}-{name}.pts", std::process::id()));
+        std::fs::write(&path, xml).unwrap();
+        let result = parse_file_with_runtimes(path.to_string_lossy().into_owned(), runtimes);
+        let _ = std::fs::remove_file(&path);
+        result
+    }
+
+    fn no_runtimes() -> HashMap<String, Option<i64>> {
+        HashMap::new()
     }
 
     #[test]
-    fn test_va_parsing() -> std::io::Result<()> {
-        match parse_file("../../../Downloads/6.11/hdplus_20261107_54526.pts".to_string()) {
-            Err(..) => (),
-            Ok(events) => println!("{} va_events", events.va_events.len()),
-        }
+    fn parses_durations_in_milliseconds() {
+        let ms = |s: &str| a_duration_from_string(s.to_string()).unwrap();
+        assert_eq!(ms("00 00:34:00.000"), 2_040_000);
+        assert_eq!(ms("00 00:32:46.040"), 1_966_040);
+        assert_eq!(ms("00 02:45:46.360"), 9_946_360);
+        assert!(a_duration_from_string("00:34:00".to_string()).is_err());
+        assert!(a_duration_from_string("quatsch".to_string()).is_err());
+    }
 
-        Ok(())
+    #[test]
+    fn parses_start_times_as_utc() {
+        let t = a_starttime_from_str("2026-11-07T19:00:00.000Z".to_string()).unwrap();
+        assert_eq!(t.to_rfc3339(), "2026-11-07T19:00:00+00:00");
+        assert!(a_starttime_from_str("2026-11-07 19:00".to_string()).is_err());
+    }
+
+    #[test]
+    fn evaluate_duration_compares_db_runtime_with_planned_duration() {
+        use DurationCheckStatus::*;
+        assert_eq!(evaluate_duration(2_040_000, Some(Some(2_040_000))), (No, 0));
+        assert_eq!(evaluate_duration(2_040_000, Some(Some(2_100_000))), (No, 0));
+        assert_eq!(
+            evaluate_duration(2_040_000, Some(Some(1_966_040))),
+            (Yes, 1_966_040)
+        );
+        assert_eq!(evaluate_duration(2_040_000, Some(None)), (Maybe, 0));
+        assert_eq!(evaluate_duration(2_040_000, None), (Maybe, 0));
+    }
+
+    const CLEAN: &str = r#"<?xml version="1.0"?>
+<root>
+  <siEvent eventId="S1" title="Show" duration="00 00:30:00.000" startTime="2026-11-07T19:00:00.000Z">
+    <siStandard displayedDuration="00 00:29:00.000" displayedStart="2026-11-07T19:01:00.000Z"/>
+  </siEvent>
+  <siEvent eventId="S2" title="Show 2" duration="00 00:05:00.000" startTime="2026-11-07T19:30:00.000Z"/>
+  <vaEvent eventId="V1" contentId="C1" title="Film" duration="00 00:34:00.000" startTime="2026-11-07T19:00:00.000Z"/>
+  <vaEvent eventId="V2" contentId="C2" title="Serie" duration="00 00:10:00.000" startTime="2026-11-07T19:34:00.000Z"/>
+</root>"#;
+
+    #[test]
+    fn clean_file_has_no_errors() {
+        let runtimes = HashMap::from([
+            ("C1".to_string(), Some(2_100_000)),
+            ("C2".to_string(), Some(600_000)),
+        ]);
+        let p = parse("clean", CLEAN, &runtimes).unwrap();
+
+        assert_eq!(p.si_events.len(), 2);
+        assert_eq!(p.va_events.len(), 2);
+        assert_eq!((p.si_events_errors, p.va_events_errors), (0, 0));
+        assert!(p.maybe_event_ids.is_empty());
+        assert_eq!(p.si_events[0].duration, 1_800_000);
+        assert_eq!(
+            p.si_events[0].displayed_start.unwrap().to_rfc3339(),
+            "2026-11-07T19:01:00+00:00"
+        );
+    }
+
+    #[test]
+    fn too_long_scheduled_video_is_an_error_and_unknown_runtime_is_a_maybe() {
+        // C1 ist laut DB kürzer (32:46,040) als geplant (34:00); C2 fehlt in der DB.
+        let runtimes = HashMap::from([("C1".to_string(), Some(1_966_040))]);
+        let p = parse("too_long", CLEAN, &runtimes).unwrap();
+
+        let v1 = &p.va_events[0];
+        assert_eq!(v1.duration_error, DurationCheckStatus::Yes);
+        assert_eq!(v1.db_duration, 1_966_040);
+        assert!(v1.has_error);
+        assert_eq!(p.va_events_errors, 1);
+
+        assert_eq!(p.va_events[1].duration_error, DurationCheckStatus::Maybe);
+        assert_eq!(p.maybe_event_ids, vec!["C2".to_string()]);
+    }
+
+    #[test]
+    fn gap_between_events_is_reported_on_both_sides() {
+        let xml = r#"<root>
+  <vaEvent eventId="V1" contentId="C1" title="A" duration="00 00:10:00.000" startTime="2026-11-07T19:00:00.000Z"/>
+  <vaEvent eventId="V2" contentId="C2" title="B" duration="00 00:10:00.000" startTime="2026-11-07T19:12:00.000Z"/>
+</root>"#;
+        let p = parse("gap", xml, &no_runtimes()).unwrap();
+        assert_eq!(p.va_events[0].error_back, Some(TimeErrorType::Gap(120_000)));
+        assert_eq!(
+            p.va_events[1].error_front,
+            Some(TimeErrorType::Gap(120_000))
+        );
+        assert_eq!(p.va_events_errors, 2);
+    }
+
+    #[test]
+    fn overlap_between_events_is_negative() {
+        let xml = r#"<root>
+  <vaEvent eventId="V1" contentId="C1" title="A" duration="00 00:10:00.000" startTime="2026-11-07T19:00:00.000Z"/>
+  <vaEvent eventId="V2" contentId="C2" title="B" duration="00 00:10:00.000" startTime="2026-11-07T19:08:00.000Z"/>
+</root>"#;
+        let p = parse("overlap", xml, &no_runtimes()).unwrap();
+        assert_eq!(
+            p.va_events[0].error_back,
+            Some(TimeErrorType::Overlap(-120_000))
+        );
+    }
+
+    #[test]
+    fn sendepause_not_on_a_five_minute_slot_is_flagged() {
+        let xml = r#"<root>
+  <siEvent eventId="S1" title="Sendepause" duration="00 00:02:00.000" startTime="2026-11-07T19:03:00.000Z"/>
+  <siEvent eventId="S2" title="Show" duration="00 00:10:00.000" startTime="2026-11-07T19:05:00.000Z"/>
+</root>"#;
+        let p = parse("slot", xml, &no_runtimes()).unwrap();
+        assert!(p.si_events[0].slot_start_error);
+        assert_eq!(p.si_events[0].title, "P7S1 - Slot");
+        assert_eq!(p.si_events_errors, 1);
+    }
+
+    #[test]
+    fn missing_attribute_gives_a_readable_error() {
+        let xml = r#"<root>
+  <vaEvent eventId="V1" title="A" duration="00 00:10:00.000" startTime="2026-11-07T19:00:00.000Z"/>
+</root>"#;
+        let err = parse("missing", xml, &no_runtimes()).unwrap_err();
+        assert_eq!(err, "Fehler: ContentId fehlt");
+    }
+
+    #[test]
+    fn broken_xml_and_missing_file_are_errors_not_panics() {
+        let err = parse("broken", "<root><vaEvent>", &no_runtimes()).unwrap_err();
+        assert!(err.starts_with("Ungültiges XML-Format"), "{err}");
+
+        let err =
+            parse_file_with_runtimes("/gibt/es/nicht.pts".to_string(), &no_runtimes()).unwrap_err();
+        assert!(err.starts_with("Fehler beim Öffnen der Datei"), "{err}");
+    }
+
+    /// Optionaler Test mit einer echten Datei, ohne festen Pfad im Code:
+    ///   PTS_TEST_FILE=/pfad/zu/hdplus_20261107_54526.pts cargo test real_file
+    /// Ohne die Variable wird der Test übersprungen.
+    #[test]
+    fn real_file_smoke_test() {
+        let Ok(path) = std::env::var("PTS_TEST_FILE") else {
+            eprintln!("PTS_TEST_FILE nicht gesetzt, übersprungen");
+            return;
+        };
+        let p = parse_file_with_runtimes(path, &no_runtimes()).expect("Datei muss parsebar sein");
+        println!(
+            "{} si_events, {} va_events",
+            p.si_events.len(),
+            p.va_events.len()
+        );
     }
 }
