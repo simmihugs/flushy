@@ -25,3 +25,4 @@ dist-ssr
 
 .svelte-kit/
 src-tauri/.env
+src-tauri/src/ses_downloader_pw/data
