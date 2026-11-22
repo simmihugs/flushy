@@ -1,4 +1,4 @@
-export interface MyFile {
+export interface PtsFile {
 	name: string;
 	path: string;
 	si_events: any[];

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Sun, Moon } from '@lucide/svelte';
 	let {
+		showConfigPage,
 		files,
 		toggleTheme,
 		getTheme,
@@ -14,7 +15,7 @@
 
 <header class="header-bar">
 	<div class="header-content">
-		{#if files.length > 0}
+		{#if !showConfigPage && files.length > 0}
 			<div class="filter-area">
 				<label
 					class="filter-container"
