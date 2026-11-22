@@ -26,3 +26,6 @@ dist-ssr
 .svelte-kit/
 src-tauri/.env
 src-tauri/src/ses_downloader_pw/data
+
+src-tauri/resources/playwright-driver/*
+!src-tauri/resources/playwright-driver/README.txt

@@ -1,5 +1,6 @@
 pub mod app_log;
 pub mod config;
+pub mod driver_path;
 pub mod events;
 pub mod ses_portal;
 
@@ -7,14 +8,25 @@ use tauri::{Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let bundled_driver = driver_path::use_bundled_driver_next_to_exe();
     tauri::Builder::default()
-        .setup(|app| {
+        .setup(move |app| {
             if let Ok(data_dir) = app.path().app_data_dir() {
                 app_log::init_logging(data_dir.clone());
                 app_log::info(
                     "app",
                     &format!("Logging initialisiert in {}/logs", data_dir.display()),
                 );
+
+                match &bundled_driver {
+                    Some(dir) => {
+                        app_log::info("app", &format!("Playwright-Treiber: {}", dir.display()))
+                    }
+                    None => app_log::info(
+                        "app",
+                        "Kein mitgelieferter Playwright-Treiber, nutze Standardsuche",
+                    ),
+                }
             }
 
             let handle = app.handle().clone();

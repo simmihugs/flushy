@@ -32,7 +32,18 @@ jobs:
 
       - name: install frontend dependencies
         run: npm ci
-     
+
+      - name: Playwright-Treiber für das Bundle vorbereiten
+        shell: pwsh
+        run: |
+          $ver = ((cargo metadata --format-version 1 --manifest-path src-tauri/Cargo.toml | ConvertFrom-Json).packages | Where-Object name -eq 'playwright-rs').version
+          cargo install playwright-rs --version $ver --features cli --locked
+          playwright-rs install --driver-only
+          $src = Get-ChildItem "$env:LOCALAPPDATA\playwright-rust\*\playwright-*" -Directory | Select-Object -First 1
+          $dest = "src-tauri/resources/playwright-driver"
+          New-Item -ItemType Directory -Force $dest | Out-Null
+          Copy-Item "$($src.FullName)\*" $dest -Recurse -Force
+          if (-not (Test-Path "$dest/node.exe") -or -not (Test-Path "$dest/package/cli.js")) { throw "Playwright-Treiber unvollständig in $dest" }     
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
         env:
