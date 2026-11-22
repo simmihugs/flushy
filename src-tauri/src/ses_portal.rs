@@ -6,6 +6,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 
 use ses_downloader_pw::store::{Store, StoredEntry};
 use ses_downloader_pw::sync::{sync_library, Progress, SyncOptions, SyncSummary};
+use std::collections::HashMap;
 
 #[derive(Default)]
 pub struct SyncState {
@@ -177,6 +178,27 @@ pub fn start_sync(
 }
 
 #[tauri::command]
+pub fn recheck_durations(
+    app: AppHandle,
+    db: String,
+    content_ids: Vec<String>,
+) -> Result<HashMap<String, Option<i64>>, String> {
+    if content_ids.is_empty() {
+        return Ok(HashMap::new());
+    }
+    let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let db_name = if db.trim().is_empty() {
+        "ses.db"
+    } else {
+        db.trim()
+    };
+    let store = Store::open(data_dir.join(db_name)).map_err(|e| format!("{e:#}"))?;
+    store
+        .get_runtimes_for_ids(&content_ids)
+        .map_err(|e| format!("{e:#}"))
+}
+
+#[tauri::command]
 pub fn list_db_entries(
     app: AppHandle,
     db: String,
@@ -186,7 +208,7 @@ pub fn list_db_entries(
 ) -> Result<DbListResponse, String> {
     let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let db_name = if db.trim().is_empty() {
-        "ses2.db"
+        "ses.db"
     } else {
         db.trim()
     };

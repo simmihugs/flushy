@@ -1,5 +1,6 @@
 //! SQLite store: one row per entry, keyed by `ContentId`, with its `RuntimeMs`.
 
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::Path;
 
@@ -100,6 +101,26 @@ impl Store {
         }
 
         Ok(out)
+    }
+
+    pub fn get_runtimes_for_ids(&self, ids: &[String]) -> Result<HashMap<String, Option<i64>>> {
+        let mut map = HashMap::with_capacity(ids.len());
+        if ids.is_empty() {
+            return Ok(map);
+        }
+
+        let mut stmt = self
+            .conn
+            .prepare("SELECT runtime_ms FROM items WHERE content_id = ?1")?;
+
+        for id in ids {
+            let mut rows = stmt.query(params![id])?;
+            if let Some(row) = rows.next()? {
+                let rt: Option<i64> = row.get(0)?;
+                map.insert(id.clone(), rt);
+            }
+        }
+        Ok(map)
     }
 
     #[cfg(test)]
