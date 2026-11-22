@@ -1,5 +1,7 @@
 <script lang="ts">
-	import type { MyFile } from './MyFile.ts';
+	import type { PtsFile } from './PtsFile.ts';
+	import type { ConfigFile } from './ConfigFile.ts';
+	import type { Param } from './Param.ts';
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
 	import { getCurrentWebview } from '@tauri-apps/api/webview';
@@ -7,12 +9,20 @@
 	import FileView from './FileView.svelte';
 	import Sidebar from './Sidebar.svelte';
 	import HeaderBar from './HeaderBar.svelte';
+	import StatusBar from './StatusBar.svelte';
+	import ConfigPage from './ConfigPage.svelte';
 
+	let showConfigPage = $state(false);
 	let showCollapsed = $state(true);
 	let showVaEvents = $state(false);
 	let theme = $state({ value: false, name: 'light' });
-	let files = $state<MyFile[]>([]);
-	let activeFile = $state<MyFile | null>(null);
+	let files = $state<PtsFile[]>([]);
+	let activeFile = $state<PtsFile | null>(null);
+	let configFile = $state<ConfigFile>({
+		name: 'config-file',
+		path: '.env'
+	});
+	let configParams = $state<Param[] | null>(null);
 
 	function deleteFile(filePath: string) {
 		files = files.filter((f) => f.path !== filePath);
@@ -33,17 +43,27 @@
 	}
 
 	function getTheme() {
-		return theme.value ? '🌙 Dark' : '☀️ Light';
+		return theme.value;
+	}
+
+	async function loadConfig(configFile: ConfigFile) {
+		try {
+			configParams = await invoke<Param[]>('load_or_create_config', { path: configFile.path });
+		} catch (err) {
+			console.error('Fehler beim laden der config:', err);
+		}
 	}
 
 	async function handleFiles(newFiles: { name: string; path: string }[]) {
 		let validAdded = false;
 		for (let file of newFiles) {
-			const myfile: MyFile = {
+			const myfile: PtsFile = {
 				name: file.name,
 				path: file.path,
 				si_events: [],
-				va_events: []
+				va_events: [],
+				si_events_errors: 0,
+				va_events_errors: 0
 			};
 
 			files = [...files, myfile];
@@ -55,9 +75,9 @@
 		}
 	}
 
-	async function runAutomaticParsing(file: MyFile) {
+	async function runAutomaticParsing(file: PtsFile) {
 		try {
-			const answer = await invoke('parse_file', { path: file.path });
+			const answer: PtsFile = await invoke('parse_file', { path: file.path });
 			file.si_events_errors = answer.si_events_errors;
 			file.va_events_errors = answer.va_events_errors;
 			file.si_events = answer.si_events as any[];
@@ -82,7 +102,7 @@
 		}
 	}
 
-	onMount(() => {
+	onMount(async () => {
 		const savedTheme = localStorage.getItem('theme');
 		const isDark = savedTheme === 'dark';
 
@@ -99,6 +119,8 @@
 			}
 		});
 
+		await loadConfig(configFile);
+
 		return () => {
 			unlisten.then((f) => f());
 		};
@@ -106,22 +128,36 @@
 </script>
 
 <main class="layout">
-	<HeaderBar {files} {toggleTheme} {getTheme} {activeFile} bind:showVaEvents bind:showCollapsed />
-
-	<div class="content-body {files.length === 0 ? 'empty-state' : ''}">
-		<Sidebar
-			{files}
-			bind:activeFile
-			onFileSelect={chooseFile}
-			isExpanded={files.length > 0}
-			onFileDelete={deleteFile}
-		/>
-		{#if files.length > 0}
-			<div class="file-view-container">
-				<FileView {showVaEvents} {showCollapsed} {activeFile} />
-			</div>
-		{/if}
-	</div>
+	<HeaderBar
+		{showConfigPage}
+		{files}
+		{toggleTheme}
+		{getTheme}
+		{activeFile}
+		bind:showVaEvents
+		bind:showCollapsed
+	/>
+	{#if showConfigPage}
+		<div class="file-view-container">
+			<ConfigPage {configParams} />
+		</div>
+	{:else}
+		<div class="content-body {files.length === 0 ? 'empty-state' : ''}">
+			<Sidebar
+				{files}
+				bind:activeFile
+				onFileSelect={chooseFile}
+				isExpanded={files.length > 0}
+				onFileDelete={deleteFile}
+			/>
+			{#if files.length > 0}
+				<div class="file-view-container">
+					<FileView {showVaEvents} {showCollapsed} {activeFile} />
+				</div>
+			{/if}
+		</div>
+	{/if}
+	<StatusBar bind:showConfigPage />
 </main>
 
 <style>
@@ -155,6 +191,7 @@
 		margin: 0;
 		overflow: hidden;
 	}
+
 	.content-body {
 		display: flex;
 		flex: 1;
@@ -162,6 +199,7 @@
 		width: 100%;
 		overflow: hidden;
 	}
+
 	.file-view-container {
 		display: flex;
 		flex-direction: row;
