@@ -26,8 +26,13 @@
       cargo test  
     #+end_src
 
-
 ** UI
-   [[file:img/ui.jpeg]]
+   
+*** Database view
+    [[file:img/Screenshot 2026-11-22 232219.png]]
 
+*** Config view    
+    [[file:img/Screenshot 2026-11-22 232256.png]]
 
+*** File view
+    [[file:img/Screenshot 2026-11-22 232338.png]]
