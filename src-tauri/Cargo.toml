@@ -20,5 +20,7 @@ serde_json = "1"
 tauri-plugin-dialog = "2"
 chrono = { version = "0.4.45", features = ["serde"] }
 roxmltree = "0.21.1"
-
+ses_downloader_pw = { path = "src/ses_downloader_pw" }
+tokio = { version = "1", features = ["full"] }
+playwright-rs = "0.21"
 
