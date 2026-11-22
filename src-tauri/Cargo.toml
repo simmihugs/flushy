@@ -1,6 +1,6 @@
 [package]
 name = "flushy"
-version = "0.1.14"
+version = "0.1.16"
 description = "My Tauri App"
 authors = ["simmihugs"]
 edition = "2021"
