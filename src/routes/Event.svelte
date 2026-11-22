@@ -37,6 +37,21 @@
 			{/if}
 		</div>
 
+		<div>
+			{#if event.durationError === 'yes'}
+				<span class="error-badge duration">
+					⚠️ Video datei zu lange verplant! -- Dateidauer: {event.dbDuration != null
+						? formatMilliseconds(event.dbDuration)
+						: '–'} &lt; Plandauer:
+					{#if event.duration != null}
+						{formatMilliseconds(event.duration)}
+					{/if}
+				</span>
+			{:else if event.durationError === 'maybe'}
+				<span class="maybe-badge">? Duration Maybe</span>
+			{/if}
+		</div>
+
 		<div class="card-top">
 			<span class="event-id">{event.eventId}</span>
 		</div>
@@ -65,9 +80,19 @@
 </span>
 
 <style>
+	.maybe-badge {
+		background: rgba(250, 204, 21, 0.16);
+		color: #eab308;
+		padding: 1px 5px;
+		border-radius: 4px;
+		font-weight: 600;
+		font-size: 11px;
+	}
+
 	.indent {
 		padding-left: 25px;
 	}
+
 	.event-card {
 		background: var(--event-card-background);
 		border: 1px solid var(--event-card-border);

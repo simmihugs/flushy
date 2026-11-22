@@ -2,6 +2,7 @@
 	import type { PtsFile } from './PtsFile.ts';
 	import type { ConfigFile } from './ConfigFile.ts';
 	import type { Param } from './Param.ts';
+	import { listen } from '@tauri-apps/api/event';
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
 	import { getCurrentWebview } from '@tauri-apps/api/webview';
@@ -11,8 +12,10 @@
 	import HeaderBar from './HeaderBar.svelte';
 	import StatusBar from './StatusBar.svelte';
 	import ConfigPage from './ConfigPage.svelte';
+	import DatabaseView from './DatabaseView.svelte';
 
 	let showConfigPage = $state(false);
+	let showDbPage = $state(false);
 	let showCollapsed = $state(true);
 	let showVaEvents = $state(false);
 	let theme = $state({ value: false, name: 'light' });
@@ -23,6 +26,47 @@
 		path: '.env'
 	});
 	let configParams = $state<Param[] | null>(null);
+
+	let dbStatus = $state<'unknown' | 'connected' | 'error'>('unknown');
+	let syncStatus = $state<'idle' | 'syncing' | 'synced' | 'error'>('idle');
+	let syncMessage = $state<string>('');
+
+	function getParamValue(params: Param[] | null, key: string, fallback = ''): string {
+		return params?.find((p) => p.name === key)?.value ?? fallback;
+	}
+
+	async function connectToDb(params: Param[]) {
+		try {
+			const db = getParamValue(params, 'DATABASE_URL', 'ses2.db');
+			const count = await invoke<number>('check_db_connection', { db });
+			dbStatus = 'connected';
+			syncMessage = `${count} Einträge in DB`;
+		} catch (err) {
+			dbStatus = 'error';
+			syncMessage = String(err);
+		}
+	}
+
+	function triggerBackgroundSync(params: Param[]) {
+		const email = getParamValue(params, 'EMAIL');
+		const password = getParamValue(params, 'PASSWD');
+		const db = getParamValue(params, 'DATABASE_URL', 'ses2.db');
+		const url = getParamValue(params, 'SES_URL', 'https://www.ses-360.com/');
+		const headlessRaw = getParamValue(params, 'HEADLESS', 'true').trim().toLowerCase();
+		const headless = headlessRaw === '' ? true : ['1', 'true', 'yes'].includes(headlessRaw);
+
+		syncStatus = 'syncing';
+		void invoke('start_sync', {
+			email,
+			password,
+			db,
+			url,
+			headless
+		}).catch((err) => {
+			syncStatus = 'error';
+			syncMessage = String(err);
+		});
+	}
 
 	function deleteFile(filePath: string) {
 		files = files.filter((f) => f.path !== filePath);
@@ -102,16 +146,13 @@
 		}
 	}
 
-	onMount(async () => {
+	onMount(() => {
 		const savedTheme = localStorage.getItem('theme');
-		const isDark = savedTheme === 'dark';
+		applyTheme(savedTheme === 'dark');
 
-		applyTheme(isDark);
-
-		const unlisten = getCurrentWebview().onDragDropEvent((event) => {
+		const unlistenDrop = getCurrentWebview().onDragDropEvent((event) => {
 			if (event.payload.type === 'drop') {
-				const nativePaths = event.payload.paths;
-				const mappedFiles = nativePaths.map((filePath) => ({
+				const mappedFiles = event.payload.paths.map((filePath) => ({
 					name: filePath.split(/[/\\]/).pop() ?? 'unknown filename',
 					path: filePath ?? 'unknown path'
 				}));
@@ -119,10 +160,34 @@
 			}
 		});
 
-		await loadConfig(configFile);
+		const unlistenProgress = listen<{ page: number; new_rows: number; known_rows: number }>(
+			'sync-progress',
+			(event) => {
+				syncStatus = 'syncing';
+				syncMessage = `Seite ${event.payload.page} (+${event.payload.new_rows} neu)`;
+			}
+		);
+
+		const unlistenFinished = listen<{ ok: boolean; message: string; total_in_db?: number }>(
+			'sync-finished',
+			(event) => {
+				syncStatus = event.payload.ok ? 'synced' : 'error';
+				syncMessage = event.payload.message;
+			}
+		);
+
+		void (async () => {
+			await loadConfig(configFile);
+			if (configParams) {
+				await connectToDb(configParams);
+				triggerBackgroundSync(configParams);
+			}
+		})();
 
 		return () => {
-			unlisten.then((f) => f());
+			unlistenDrop.then((f) => f());
+			unlistenProgress.then((f) => f());
+			unlistenFinished.then((f) => f());
 		};
 	});
 </script>
@@ -141,6 +206,10 @@
 		<div class="file-view-container">
 			<ConfigPage {configParams} />
 		</div>
+	{:else if showDbPage}
+		<div class="file-view-container">
+			<DatabaseView {configParams} />
+		</div>
 	{:else}
 		<div class="content-body {files.length === 0 ? 'empty-state' : ''}">
 			<Sidebar
@@ -157,7 +226,14 @@
 			{/if}
 		</div>
 	{/if}
-	<StatusBar bind:showConfigPage />
+	<StatusBar
+		bind:showConfigPage
+		bind:showDbPage
+		{dbStatus}
+		{syncStatus}
+		{syncMessage}
+		onResync={() => configParams && triggerBackgroundSync(configParams)}
+	/>
 </main>
 
 <style>
